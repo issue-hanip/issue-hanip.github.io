@@ -49,6 +49,15 @@ def run(conn, cfg, writer, summary: dict, guidance: str = "") -> None:
             if not problems:
                 review = writer.review(story)
                 if review.get("approved") and review.get("risk") != "높음":
+                    # 권장 사항이 있으면 반영본을 만들고, 규칙 검사를 통과할 때만 바꾼다 (출처·근거는 원본 유지)
+                    if review.get("suggestions"):
+                        try:
+                            rev = writer.revise(story, review["suggestions"])
+                            rev["sources"], rev["claims"] = story["sources"], story.get("claims", [])
+                            if not qa.check(rev, cfg):
+                                story, review["revised"] = rev, True
+                        except Exception as e:
+                            review["revise_error"] = str(e)[:200]
                     break
                 problems = review.get("issues") or ["검수 반려(사유 없음)"]
             feedback = problems

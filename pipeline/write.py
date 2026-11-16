@@ -225,6 +225,14 @@ class ClaudeWriter:
         user = "검수할 원고(JSON):\n" + json.dumps(story, ensure_ascii=False, indent=1)
         return self._call(REVIEW_SYSTEM, user, REVIEW_SCHEMA, self.review_effort, web=True)
 
+    def revise(self, story: dict, suggestions: list[str]) -> dict:
+        """검수를 통과한 원고에 권장 사항만 반영한다 (새 사실 추가 금지, 웹 도구 없음)."""
+        system = (WRITE_SYSTEM + "\n\n## 지금 할 일\n검수를 통과한 원고에 편집장의 권장 사항을 반영해 다듬습니다. "
+                  "권장 사항이 요구하는 부분만 고치고, 새 사실·새 인용·새 출처를 더하지 않습니다. sources와 claims는 그대로 둡니다.")
+        user = ("원고(JSON):\n" + json.dumps(story, ensure_ascii=False, indent=1)
+                + "\n\n반영할 권장 사항:\n- " + "\n- ".join(suggestions))
+        return self._call(system, user, STORY_SCHEMA, self.effort)
+
 
 class FakeWriter:
     """테스트용: Claude를 부르지 않고 규칙을 지키는 고정 원고를 돌려준다."""
@@ -232,6 +240,9 @@ class FakeWriter:
     def __init__(self, approve: bool = True):
         self.approve = approve
         self.usage = {"calls": 0}
+
+    def revise(self, story, suggestions):
+        return dict(story, title=story["title"].replace("?", "?!"))
 
     def pick(self, candidates, recent_titles, n, guidance=""):
         return {"picks": [{"id": c["id"], "category": "연예", "angle": "왜 화제인가", "why": "테스트"}
