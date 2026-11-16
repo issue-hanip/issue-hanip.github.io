@@ -8,7 +8,8 @@ URL = re.compile(r"https?://\S+")
 # 단정 표현 바로 앞에 '의혹·혐의·주장' 같은 유보어가 없으면 위험 신호
 ALLEGATION = re.compile(r"(폭행|갑질|사기|횡령|성추행|성폭행|마약|음주운전|학폭|학교폭력|불륜|외도|표절|탈세)(을|를)?\s?(했다|저질렀다|한 것으로 드러났다|사실이 드러났다|가 사실로)")
 HEDGE = ("의혹", "혐의", "주장", "보도", "논란", "폭로", "고소", "고발", "부인", "인정")
-STRONG_QUOTE = re.compile(r"[\"“]([^\"”]{70,})[\"”]")   # 70자 넘는 직접 인용은 베끼기 의심
+QUOTES = (re.compile(r"“([^“”]*)”"), re.compile(r'"([^"\n]*)"'))   # 짝을 맞춘 인용부호 안쪽
+MAX_QUOTE = 70                                                       # 이보다 긴 직접 인용은 베끼기 의심
 
 
 def _domain(url: str) -> str:
@@ -41,8 +42,11 @@ def check(story: dict, cfg: dict) -> list[str]:
         p.append(f"제목 50자 초과 ({len(title)}자)")
     if URL.search(body):
         p.append("본문에 URL을 쓰지 말 것 (출처는 시스템이 붙임)")
-    for m in STRONG_QUOTE.finditer(body):
-        p.append(f"직접 인용이 너무 김 (한 문장 이내로 요약): '{m.group(1)[:30]}…'")
+    for line in body.split("\n"):
+        for rx in QUOTES:
+            for m in rx.finditer(line):
+                if len(m.group(1)) > MAX_QUOTE:
+                    p.append(f"직접 인용이 너무 김 (한 문장 이내로 요약): '{m.group(1)[:30]}…'")
 
     # 숏츠
     sh = story.get("shorts") or {}

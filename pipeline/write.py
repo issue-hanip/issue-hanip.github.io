@@ -66,8 +66,9 @@ REVIEW_SCHEMA = {
     "type": "object",
     "properties": {"approved": {"type": "boolean"},
                    "issues": {"type": "array", "items": {"type": "string"}},
+                   "suggestions": {"type": "array", "items": {"type": "string"}},
                    "risk": {"type": "string", "enum": ["낮음", "중간", "높음"]}},
-    "required": ["approved", "issues", "risk"], "additionalProperties": False,
+    "required": ["approved", "issues", "suggestions", "risk"], "additionalProperties": False,
 }
 
 RULES = """## 지켜야 할 선 (가장 중요 — 법적 책임이 채널 운영자에게 있다)
@@ -77,6 +78,9 @@ RULES = """## 지켜야 할 선 (가장 중요 — 법적 책임이 채널 운�
 3. 다루지 않는 것: 사생활 추측(연애·임신·이혼·건강·성적 지향), 미성년자 신상, 범죄·사고 피해자 신상, 일반인 실명·얼굴·주소,
    자살·자해 방법, 혐오(지역·성별·국적·장애), 특정인 조롱·모욕·외모 평가.
 4. 저작권: 기사 문장을 그대로 옮기지 않고 내 말로 요약한다. 직접 인용은 한 문장 이내, 큰따옴표와 출처 표시.
+   큰따옴표 안 발언은 실제로 읽은 기사 본문에 그 문구 그대로 있을 때만 쓴다 (관련기사 제목·다른 매체 기억으로 만들지 않음). 확실하지 않으면 따옴표 없이 "~라는 취지로 말했다"로 쓴다.
+   어떤 내용을 "○○ 보도에 따르면"이라고 쓸 때는 그 매체 기사에 실제로 있는 내용이어야 한다. 세부 수치는 그 수치를 쓴 매체로만 돌린다.
+   명단·목록을 일부만 쓰면 "등"을 붙인다.
 5. 정치 이슈는 한쪽 편을 들지 않는다. 양쪽 입장을 같은 무게로 쓰거나 다루지 않는다.
 
 ## 형식 (여기서는 자극적으로)
@@ -115,7 +119,9 @@ WRITE_SYSTEM = """당신은 한국 이슈·연예 소식 채널의 작가입니�
 """
 
 REVIEW_SYSTEM = """당신은 언론사 법무·팩트체크 담당 편집장입니다. 발행 전 마지막 검수를 합니다.
-필요하면 WebFetch로 sources 기사를 직접 열어 대조하세요. 다음 중 하나라도 있으면 approved=false, issues에 고칠 점을 구체적으로 적습니다.
+필요하면 WebFetch로 sources 기사를 직접 열어 대조하세요. 아래 (1)~(7)에 해당하면 blocking 문제로 issues에 고칠 점을 구체적으로 적습니다.
+표현을 더 정확하게 다듬을 수 있는 정도의 권장 사항은 suggestions에만 적습니다(발행을 막지 않음).
+approved는 blocking 문제가 하나도 없을 때 true입니다.
 (1) sources 기사와 다른 사실·숫자·날짜·이름·발언, 출처 없는 새로운 사실
 (2) 의혹·루머·주장을 사실처럼 단정, 수사·재판 중 사안을 유죄처럼 서술 (명예훼손 위험)
 (3) 사생활 추측, 미성년자·피해자·일반인 신상, 모욕·조롱·외모 평가, 혐오 표현
@@ -246,4 +252,5 @@ class FakeWriter:
                 "shorts": {"title": "다쳤는데 촬영은 계속? 무슨 일", "scenes": scenes, "hashtags": ["연예", "이슈"]}}
 
     def review(self, story):
-        return {"approved": self.approve, "issues": [] if self.approve else ["테스트 반려"], "risk": "낮음"}
+        return {"approved": self.approve, "issues": [] if self.approve else ["테스트 반려"], "suggestions": [],
+                "risk": "낮음"}

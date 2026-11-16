@@ -46,6 +46,19 @@ class T(unittest.TestCase):
         story["body_md"] += "\n\n가신문은 그가 폭행을 저질렀다는 의혹을 보도했다."
         self.assertEqual(qa.check(story, self.cfg), [])
 
+    def test_quote_pairs(self):
+        story = write.FakeWriter().write({}, "", "연예")
+        story["body_md"] += '\n\n그는 "괜찮다"고 했습니다. ' + "가" * 80 + ' 소속사는 "회복 중"이라고 밝혔습니다.'
+        self.assertEqual(qa.check(story, self.cfg), [])
+        story["body_md"] += '\n\n"' + "나" * 80 + '"'
+        self.assertTrue(any("인용" in x for x in qa.check(story, self.cfg)))
+
+    def test_instagram_caption(self):
+        from pipeline import instagram
+        cap = instagram.caption_for({"title": "제목 #Shorts", "tags": '["연예"]'}, "https://x/p/")
+        self.assertTrue(cap.startswith("제목\n"))
+        self.assertIn("#연예", cap)
+
     def test_end_to_end_fake(self):
         news.store(self.conn, news.parse(RSS.encode(), "entertainment"))
         self.conn.execute("UPDATE candidates SET published_at = ?", (db.now_iso(),))

@@ -134,12 +134,6 @@ def publish_reel(video_url: str, caption: str, wait_seconds: int = 600) -> str:
 def caption_for(video: dict, post_url: str) -> str:
     title = video["title"].replace(" #Shorts", "").strip()
     tags = " ".join("#" + t.replace(" ", "") for t in json.loads(video["tags"]))
-    return (f"{title}
-
-언론 보도를 한입에 정리했습니다. 출처와 전체 정리는 프로필 링크의 블로그에서 확인하세요.
-"
-            f"{post_url}
-
-※ 의혹·주장은 확정된 사실이 아닙니다.
-
-{tags} #이슈 #오늘의이슈")
+    lines = [title, "", "언론 보도를 한입에 정리했습니다. 출처와 전체 정리는 프로필 링크의 블로그에서 확인하세요.",
+             post_url, "", "※ 의혹·주장은 확정된 사실이 아닙니다.", "", tags + " #이슈 #오늘의이슈"]
+    return chr(10).join(lines)
