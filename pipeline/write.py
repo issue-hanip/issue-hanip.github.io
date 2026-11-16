@@ -252,18 +252,22 @@ class ClaudeWriter:
         return self._call(system, user, STORY_SCHEMA, self.effort)
 
 
-    def vet_photos(self, paths: list, names: str) -> set[int]:
-        """숏츠에 넣을 사진 후보를 Claude가 직접 보고 고른다 (얼굴로 신원을 판별하지는 않는다)."""
+    def vet_photos(self, paths: list, names: str, titles: list | None = None) -> set[int]:
+        """숏츠에 넣을 사진 후보를 Claude가 직접 보고 고른다.
+        얼굴로 신원을 판별하지 않고, 사진 속 글자·상황이 파일 정보와 맞는지만 대조한다."""
         from pathlib import Path
         paths = [Path(p).resolve() for p in paths]
-        listing = "\n".join(f"{i}: {p}" for i, p in enumerate(paths))
-        user = (f"이슈 영상에 쓸 사진 후보입니다. 파일 이름상 인물/그룹: {names}\n"
+        titles = titles or [""] * len(paths)
+        listing = "\n".join(f"{i}: {p}  (Commons 파일 제목: {t})" for i, (p, t) in enumerate(zip(paths, titles)))
+        user = (f"이슈 영상에 쓸 사진 후보입니다. 영상에 나올 인물/그룹: {names}\n"
                 "Read 도구로 각 이미지를 열어 보고, 아래 조건을 모두 만족하는 번호만 ok에 넣으세요.\n"
                 "(a) 무대·시상식·레드카펫·제작발표회·화보처럼 공식 활동 중인 연예인/공인이 사진의 주인공이다\n"
                 "(b) 관계없어 보이는 일반인(행인·관객·직원)의 얼굴이 크게 나오지 않는다\n"
                 "(c) 광고판·포스터·상품·부스·거리 풍경 위주의 사진이 아니다\n"
                 "(d) 선정적이거나 사고·부상 장면이 아니고, 이미지가 깨지지 않았다\n"
-                "얼굴로 누구인지 판별하려 하지 말고 위 조건만 보세요.\n\n" + listing)
+                "(e) 사진 속 글자·상황이 파일 제목과 어긋나지 않는다: 배경판·이름표·자막에 적힌 이름이나 행사명이 "
+                "다른 사람·다른 행사를 가리키면 제외. 그룹이면 인원수가 크게 어긋나면 제외. 단서가 없으면 이 조건은 통과로 본다.\n"
+                "얼굴 생김새로 누구인지 판별하지 마세요. 위 조건만 봅니다.\n\n" + listing)
         schema = {"type": "object", "properties": {"ok": {"type": "array", "items": {"type": "integer"}},
                                                    "notes": {"type": "string"}},
                   "required": ["ok", "notes"], "additionalProperties": False}

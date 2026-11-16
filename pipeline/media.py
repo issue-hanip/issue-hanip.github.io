@@ -68,8 +68,9 @@ def search(names: list[str], kind: str = "bitmap", limit: int = 30) -> list[dict
             r = requests.get(API, headers=UA, timeout=30, params={
                 "action": "query", "format": "json", "generator": "search", "gsrnamespace": 6,
                 "gsrsearch": f'intitle:"{q}" filetype:{kind}', "gsrlimit": limit,
-                "prop": "imageinfo", "iiprop": "url|size|extmetadata|mediatype", "iiurlwidth": 1400,
-                "iiextmetadatafilter": "LicenseShortName|Artist|DateTimeOriginal"})
+                "prop": "imageinfo|categories", "iiprop": "url|size|extmetadata|mediatype", "iiurlwidth": 1400,
+                "iiextmetadatafilter": "LicenseShortName|Artist|DateTimeOriginal",
+                "clshow": "!hidden", "cllimit": "max"})
             pages = (r.json().get("query") or {}).get("pages") or {}
         except (requests.RequestException, ValueError):
             continue
@@ -91,14 +92,18 @@ def search(names: list[str], kind: str = "bitmap", limit: int = 30) -> list[dict
             dur = float(ii.get("duration") or 0)
             if kind == "video" and not (8 <= dur <= 900):
                 continue
+            cats = [c.get("title", "") for c in p.get("categories") or []]
             out.append({"title": title, "license": lic, "rank": rank,
+                        "categorized": any(name_in_title(c, names) for c in cats),
                         "artist": _clean((m.get("Artist") or {}).get("value", "")),
                         "date": (m.get("DateTimeOriginal") or {}).get("value", "")[:10],
                         "url": ii.get("url"), "thumb": ii.get("thumburl") or ii.get("url"),
                         "page": ii.get("descriptionurl") or "", "duration": dur,
                         "portrait": ii.get("height", 0) >= ii.get("width", 1) * 0.95})
-    # 세로 인물 사진 우선 (가로 사진은 행사장·거리 풍경이 많다) → 라이선스 → 최신
-    out.sort(key=lambda x: (kind == "bitmap" and not x["portrait"], x["rank"], x["date"] == "",
+    # 우선순위: 사람이 붙인 인물 분류까지 맞는 파일 → 제목만 맞는 파일
+    #          → 세로 인물 사진(가로는 행사장·거리 풍경이 많다) → 라이선스 → 최신
+    out.sort(key=lambda x: (not x["categorized"], kind == "bitmap" and not x["portrait"], x["rank"],
+                            x["date"] == "",
                             "".join(chr(255 - ord(c)) for c in x["date"])))
     return out
 
@@ -185,8 +190,9 @@ def gather(people: list[dict], work: Path, max_photos: int = 4, max_clips: int =
             st = work / f"c{j}.jpg"
             stills.append(st if _still(c.path, st) else c.path)
         names = ", ".join(dict.fromkeys(n for pp in people[:3] for n in names_of(pp)))
+        titles = [m.title for m in photos] + [m.title for m in clips]
         try:
-            ok = vet(stills, names)
+            ok = vet(stills, names, titles)
         except Exception as e:
             print(f"  사진 검수 실패 → 사진 없이 진행: {e}")
             return []
