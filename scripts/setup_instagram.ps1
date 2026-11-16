@@ -3,7 +3,7 @@
 #   .\scripts\setup_instagram.ps1 -IgUserId 1784xxxxxxxxxxxx
 param([Parameter(Mandatory = $true)][string]$IgUserId)
 $gh = "C:\Program Files\GitHub CLI\gh.exe"
-$repo = "silgeorae-report/silgeorae-report.github.io"
+$repo = (Get-Content (Join-Path $PSScriptRoot "../private/REPO.txt") -ErrorAction Stop).Trim()   # 이 채널 저장소 (예: 조직/저장소). 실거래가 저장소와 섞이지 않게 파일로만 지정
 
 $tok = (Get-Clipboard -Raw)
 if ($null -eq $tok) { $tok = "" }
