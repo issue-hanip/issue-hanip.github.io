@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+*.pyc
+public/
+videos/
+data/demo.db
+data/trial.db
+.env
+client_secret*.json
+tiktok_upload/
+private/

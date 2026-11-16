@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}{{ post.title }} | {{ site.title }}{% endblock %}
+{% block description %}{{ post.description }}{% endblock %}
+{% block canonical %}{{ post.abs_url }}{% endblock %}
+{% block head %}
+<meta property="og:type" content="article">
+<meta property="og:title" content="{{ post.title }}">
+<meta property="og:description" content="{{ post.description }}">
+<meta property="og:url" content="{{ post.abs_url }}">
+{% if post.image %}<meta property="og:image" content="{{ post.image }}">{% endif %}
+<script type="application/ld+json">{{ jsonld | safe }}</script>
+{% endblock %}
+{% block content %}
+<article class="post">
+  <p class="crumbs"><a href="{{ site.base_path }}/">홈</a> › <a href="{{ site.base_path }}/category/{{ post.category_slug }}/">{{ post.category }}</a></p>
+  <h1>{{ post.title }}</h1>
+  <p class="meta">{{ post.created_at | date }} 작성 · 보도 내용 정리</p>
+  {% if site.adsense_client %}<ins class="adsbygoogle" style="display:block" data-ad-client="{{ site.adsense_client }}" data-ad-format="auto" data-full-width-responsive="true"></ins><script>(adsbygoogle=window.adsbygoogle||[]).push({});</script>{% endif %}
+  <div class="body">{{ post.html | safe }}</div>
+  {% if post.youtube_id %}
+  <section class="video">
+    <h2>1분 영상으로 보기</h2>
+    <iframe src="https://www.youtube-nocookie.com/embed/{{ post.youtube_id }}" title="{{ post.title }} 영상" loading="lazy" allowfullscreen></iframe>
+  </section>
+  {% endif %}
+  <section class="sources">
+    <h2>출처</h2>
+    <ul>{% for s in post.sources %}<li>{{ s.outlet }} — <a href="{{ s.url }}" rel="nofollow noopener" target="_blank">{{ s.title }}</a></li>{% endfor %}</ul>
+    <p class="note">이 글은 위 보도를 요약·정리한 것입니다. 의혹·주장으로 표시한 내용은 확정된 사실이 아닙니다. 사실과 다른 내용이 있으면 <a href="{{ site.base_path }}/about/#correction">정정 요청</a>을 남겨 주세요.</p>
+  </section>
+  {% if post.tags %}<p class="tags">{% for t in post.tags %}<span>#{{ t }}</span>{% endfor %}</p>{% endif %}
+</article>
+{% if related %}
+<section class="related">
+  <h2>다른 이슈</h2>
+  <ul class="list">{% for r in related %}<li><a href="{{ r.url }}">{{ r.title }}</a><small>{{ r.category }} · {{ r.created_at | date }}</small></li>{% endfor %}</ul>
+</section>
+{% endif %}
+{% endblock %}

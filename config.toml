@@ -1,0 +1,54 @@
+# 이슈 채널 파이프라인 설정. 비밀값은 여기 넣지 말고 환경변수/GitHub Secrets로 넣는다.
+# 원칙: 유료 결제 수단은 쓰지 않는다. Claude는 구독 토큰(CLAUDE_CODE_OAUTH_TOKEN)으로 호출한다.
+
+[site]
+title = "이슈 한입"
+tagline = "오늘 다들 이야기하는 그 사건, 한입에 정리"
+base_url = "https://example.github.io"   # 저장소 Variables의 SITE_BASE_URL이 우선
+language = "ko"
+author = "이슈 한입 편집팀"
+contact_email = ""
+adsense_client = ""
+google_site_verification = ""
+
+[news]
+# 무료 RSS (Google 뉴스 한국판). 한 이슈에 여러 언론사가 붙을수록 화제성이 높다고 본다.
+feeds = [
+  { name = "top", url = "https://news.google.com/rss?hl=ko&gl=KR&ceid=KR:ko" },
+  { name = "entertainment", url = "https://news.google.com/rss/headlines/section/topic/ENTERTAINMENT?hl=ko&gl=KR&ceid=KR:ko" },
+]
+max_age_hours = 36            # 이보다 오래된 기사는 후보에서 뺀다
+candidates_for_pick = 25      # Claude에게 보여 줄 후보 수
+
+[generate]
+model = "claude-opus-5-5"
+effort = "medium"
+review_effort = "high"        # 실존 인물을 다루므로 검수는 더 깊게
+max_stories_per_run = 3       # 하루 발행 상한 (계정 위험을 줄이려고 적게 시작)
+max_attempts = 2              # 검수 반려 시 다시 쓰는 횟수
+min_sources = 2               # 서로 다른 언론사 출처 최소 개수
+
+[safety]
+enabled = true                # false 로 바꾸면 생성·발행 즉시 중단 (킬 스위치)
+max_consecutive_failures = 3
+# 제목·본문·대본에 나오면 자동 반려 (단정·모욕·혐오·과장 표현)
+banned_phrases = ["범죄자", "사기꾼", "쓰레기", "정신병", "미친", "역겨운", "확정적", "100% 사실", "충격 실체",
+                  "결국 드러난", "인성 논란 확정", "매장", "퇴출 확정", "자살", "극단적 선택을 했다"]
+
+[shorts]
+enabled = true
+max_per_run = 2
+tts_provider = "auto"
+voice = "ko-KR-SunHiNeural"
+max_seconds = 58
+max_narration_chars = 95
+
+[youtube]
+upload = true                 # YT_* 비밀값이 있을 때만 실제 업로드
+privacy = "public"
+category_id = "25"            # 25=뉴스/정치 (24=엔터테인먼트)
+
+[instagram]
+enabled = true
+max_per_run = 2
+days_back = 2

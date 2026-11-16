@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero">
+  <h1>{{ site.title }}</h1>
+  <p>{{ site.tagline }}</p>
+</section>
+{% if categories %}<div class="chips">{% for c in categories %}<a href="{{ site.base_path }}/category/{{ c.slug }}/">{{ c.name }}</a>{% endfor %}</div>{% endif %}
+<section>
+  <h2>최신 이슈</h2>
+  {% if posts %}<ul class="list">{% for p in posts %}<li><a href="{{ p.url }}">{{ p.title }}</a><small>{{ p.category }} · {{ p.created_at | date }}</small></li>{% endfor %}</ul>
+  {% else %}<p>아직 발행된 글이 없습니다.</p>{% endif %}
+</section>
+{% endblock %}

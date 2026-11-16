@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}소개·정정 요청 | {{ site.title }}{% endblock %}
+{% block canonical %}{{ site.base_url }}/about/{% endblock %}
+{% block content %}
+<article class="post">
+<h1>{{ site.title }} 소개</h1>
+<p>{{ site.title }}은 오늘 많이 이야기되는 연예·사회·화제 이슈를 언론 보도를 바탕으로 한입에 정리합니다.</p>
+<h2>정리 원칙</h2>
+<ul>
+<li>여러 언론사 보도를 직접 확인하고, 보도된 사실만 정리합니다. 출처는 글마다 밝힙니다.</li>
+<li>의혹·주장은 누가 말했는지와 함께 '의혹', '주장'으로 표시하며 사실로 단정하지 않습니다. 당사자 입장이 있으면 함께 싣습니다.</li>
+<li>사생활 추측, 미성년자·피해자·일반인 신상, 모욕·혐오 표현은 다루지 않습니다.</li>
+<li>글과 영상은 AI(Claude)가 작성하고, 별도의 AI 검수와 자동 규칙 검사를 거쳐 발행합니다.</li>
+</ul>
+<h2 id="correction">정정·삭제 요청</h2>
+<p>사실과 다르거나 권리를 침해하는 내용이 있으면 {% if site.contact_email %}<a href="mailto:{{ site.contact_email }}">{{ site.contact_email }}</a>{% else %}해당 영상의 댓글{% endif %}로 글 주소와 내용을 알려 주세요. 확인 후 지체 없이 수정하거나 내립니다.</p>
+</article>
+{% endblock %}

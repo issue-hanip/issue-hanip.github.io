@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block title %}{{ name }} 이슈 | {{ site.title }}{% endblock %}
+{% block canonical %}{{ site.base_url }}/category/{{ slug }}/{% endblock %}
+{% block content %}
+<h1>{{ name }} 이슈</h1>
+<ul class="list">{% for p in posts %}<li><a href="{{ p.url }}">{{ p.title }}</a><small>{{ p.created_at | date }}</small></li>{% endfor %}</ul>
+{% endblock %}
