@@ -47,6 +47,7 @@ max_narration_chars = 95
 upload = true                 # YT_* 비밀값이 있을 때만 실제 업로드
 privacy = "public"
 category_id = "25"            # 25=뉴스/정치 (24=엔터테인먼트)
+expected_channel = "이슈 한입"  # 토큰의 채널 이름이 이것과 다르면 업로드하지 않음 (실거래가 채널 오업로드 방지)
 
 [instagram]
 enabled = true

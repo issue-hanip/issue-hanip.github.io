@@ -90,7 +90,8 @@ def do_shorts(conn, cfg, summary, tts_override=None):
                 continue
             try:
                 vid = youtube.upload(path, v["title"], v["description"], json.loads(v["tags"]),
-                                     cfg["youtube"]["privacy"], cfg["youtube"]["category_id"])
+                                     cfg["youtube"]["privacy"], cfg["youtube"]["category_id"],
+                                     expected_channel=cfg["youtube"].get("expected_channel"))
                 conn.execute("UPDATE videos SET status='uploaded', youtube_id=?, error=NULL, updated_at=? WHERE slug=?",
                              (vid, db.now_iso(), v["slug"]))
                 uploaded.append(vid)
