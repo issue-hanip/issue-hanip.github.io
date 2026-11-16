@@ -46,8 +46,24 @@ def access_token() -> str:
     return r.json()["access_token"]
 
 
-def upload(path, title: str, description: str, tags: list[str], privacy: str, category_id: str) -> str:
+def channel_title(token: str | None = None) -> str:
+    """토큰이 가리키는 채널 이름 (다른 채널에 올라가는 사고 방지용)."""
+    token = token or access_token()
+    r = requests.get("https://www.googleapis.com/youtube/v3/channels", params={"part": "snippet", "mine": "true"},
+                     headers={"Authorization": f"Bearer {token}"}, timeout=30)
+    if r.status_code != 200:
+        raise YouTubeError(f"채널 확인 실패 {r.status_code}: {r.text[:200]}")
+    items = r.json().get("items") or []
+    return items[0]["snippet"]["title"] if items else ""
+
+
+def upload(path, title: str, description: str, tags: list[str], privacy: str, category_id: str,
+           expected_channel: str | None = None) -> str:
     token = access_token()
+    if expected_channel:
+        got = channel_title(token)
+        if got != expected_channel:
+            raise YouTubeError(f"업로드 중단: 토큰의 채널이 '{got}' (기대: '{expected_channel}')")
     meta = {
         "snippet": {"title": title[:100], "description": description[:4900], "tags": tags,
                     "categoryId": category_id, "defaultLanguage": "ko", "defaultAudioLanguage": "ko"},
