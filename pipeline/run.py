@@ -63,7 +63,7 @@ def do_generate(conn, cfg, summary, fake=False):
     log(f"발행 {len(summary.get('published', []))}편, 반려 {len(summary.get('rejected', []))}편")
 
 
-def do_shorts(conn, cfg, summary, tts_override=None):
+def do_shorts(conn, cfg, summary, tts_override=None, fake=False):
     from . import shorts, youtube
     if not (cfg["safety"]["enabled"] and cfg["shorts"]["enabled"]):
         return
@@ -76,9 +76,16 @@ def do_shorts(conn, cfg, summary, tts_override=None):
                 conn.execute("DELETE FROM videos WHERE slug = ?", (v["slug"],))
         conn.commit()
     made, failed, uploaded = [], [], []
+    vet = None          # 사진 후보를 Claude가 직접 보고 거른다 (안 되면 사진 없이 만든다)
+    if not fake and cfg["shorts"].get("media", True):
+        try:
+            vet = _writer(cfg, False).vet_photos
+        except Exception as e:
+            log(f"  사진 검수 불가 → 사진 없이: {e}")
+            cfg["shorts"]["media"] = False
     for s in shorts.plan(conn, cfg):
         try:
-            ok, problems = shorts.produce(conn, cfg, s)
+            ok, problems = shorts.produce(conn, cfg, s, vet=vet)
         except Exception as e:
             ok, problems = False, [f"{type(e).__name__}: {e}"[:300]]
         (made if ok else failed).append(s["slug"] if ok else {"slug": s["slug"], "problems": problems[:3]})
@@ -187,7 +194,7 @@ def main(argv=None):
     if args.command in ("generate", "all"):
         stage("generate", lambda: do_generate(conn, cfg, summary, fake=args.fake_writer))
     if args.command in ("shorts", "all"):
-        stage("shorts", lambda: do_shorts(conn, cfg, summary, tts_override=args.tts))
+        stage("shorts", lambda: do_shorts(conn, cfg, summary, tts_override=args.tts, fake=args.fake_writer))
     if args.command in ("build", "all"):
         stage("build", build)
     if args.command == "instagram":

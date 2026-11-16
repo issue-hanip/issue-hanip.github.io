@@ -53,6 +53,33 @@ class T(unittest.TestCase):
         story["body_md"] += '\n\n"' + "나" * 80 + '"'
         self.assertTrue(any("인용" in x for x in qa.check(story, self.cfg)))
 
+    def test_media_rules(self):
+        from pipeline import media
+        self.assertIsNotNone(media.license_rank("CC BY 3.0"))
+        self.assertIsNotNone(media.license_rank("CC BY-SA 4.0"))
+        self.assertIsNotNone(media.license_rank("CC0"))
+        self.assertIsNone(media.license_rank("CC BY-NC 4.0"))
+        self.assertIsNone(media.license_rank("CC BY-ND 2.0"))
+        self.assertIsNone(media.license_rank("Fair use"))
+        self.assertTrue(media.name_in_title("File:20250310 Cha Eunwoo 차은우 01.jpg", ["Cha Eun-woo", "차은우"]))
+        self.assertFalse(media.name_in_title("File:Seoul street.jpg", ["Cha Eun-woo", "차은우"]))
+
+    def test_assign_media(self):
+        from pipeline import media, shorts
+        ph = [media.Media("photo", Path(f"p{i}"), f"t{i}", "", "CC BY 3.0", "", "") for i in range(2)]
+        cl = media.Media("clip", Path("c"), "c", "", "CC BY 3.0", "", "")
+        self.assertEqual(shorts.assign_media([]), [None] * 5)
+        out = shorts.assign_media(ph + [cl])
+        self.assertEqual(out[0].kind, "photo")
+        self.assertEqual(out[1].kind, "clip")
+        self.assertTrue(all(m.kind == "photo" for m in out[2:]))
+
+    def test_band_rules(self):
+        story = write.FakeWriter().write({}, "", "연예")
+        story["shorts"]["band"] = {"text": "아주 긴 고정 제목이 열여덟 자를 훌쩍 넘어감", "hot": "없는말"}
+        probs = " ".join(qa.check(story, self.cfg))
+        self.assertIn("band", probs)
+
     def test_instagram_caption(self):
         from pipeline import instagram
         cap = instagram.caption_for({"title": "제목 #Shorts", "tags": '["연예"]'}, "https://x/p/")

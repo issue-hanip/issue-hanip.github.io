@@ -62,9 +62,17 @@ def check(story: dict, cfg: dict) -> list[str]:
             p.append(f"숏츠 {k}: 화면 문구 16자 초과")
     if len(sh.get("title", "")) > 60:
         p.append("숏츠 제목 60자 초과")
+    band = sh.get("band") or {}
+    if band:
+        if not band.get("text") or len(band["text"]) > 18:
+            p.append("숏츠 고정 제목(band) 비었거나 18자 초과")
+        if band.get("hot") and band["hot"] not in band.get("text", ""):
+            p.append("숏츠 band 강조어가 제목 안에 없음")
+    if len(sh.get("people") or []) > 3:
+        p.append("숏츠 사진 인물 3명 초과")
 
     # 표현
-    texts = [title, story.get("description", ""), body, sh.get("title", "")]
+    texts = [title, story.get("description", ""), body, sh.get("title", ""), (sh.get("band") or {}).get("text", "")]
     texts += [scenes.get(k, {}).get(f, "") for k in SCENES for f in ("headline", "narration")]
     joined = "\n".join(texts)
     for phrase in safety["banned_phrases"]:

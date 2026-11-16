@@ -69,7 +69,7 @@ footer { color: var(--muted); font-size: .82rem }
     <h2>출범 단계</h2>
     <div class="steps">
       <div class="step ok"><span class="n">파이프라인 코드</span><span class="pill ok">완료</span><span class="d">수집·선정·작성·검사·검수·숏츠·사이트·글 내리기, 테스트 7개 통과</span></div>
-      <div class="step ok"><span class="n">숏츠 화면</span><span class="pill ok">시험 렌더 확인</span><span class="d">테마 4종, 인물 사진 없이 글자·기호 모션</span></div>
+      <div class="step ok"><span class="n">숏츠 화면</span><span class="pill ok">11-17 개편</span><span class="d">유사 채널 벤치마킹: 고정 제목 띠 · 당사자 사진/영상(Commons 재사용 허락분, 출처 표시) · 큰 자막</span></div>
       <div class="step ok"><span class="n">실제 글 품질</span><span class="pill ok">발행 2 · 반려 1</span><span class="d">2회차: 블랙핑크·장항준 글을 출처 기사와 직접 대조, 수치·입장 일치</span></div>
       <div class="step ok"><span class="n">블로그</span><span class="pill ok">운영 중</span><span class="d"><a href="https://issue-hanip.github.io/">issue-hanip.github.io</a> · 글 2편</span></div>
       <div class="step ok"><span class="n">YouTube</span><span class="pill ok">숏츠 2편 공개</span><span class="d">브랜드 채널 @issuehanipdaily, 업로드 전 채널 이름 확인</span></div>
@@ -85,13 +85,13 @@ footer { color: var(--muted); font-size: .82rem }
       <div class="box yes"><h3>형식은 자극적으로</h3><ul>
         <li>궁금증을 부르는 질문·반전 제목과 첫 문장</li>
         <li>짧은 구어체, "그런데", "여기서 반전" 같은 전개</li>
-        <li>숏츠: 장면 배지 도장, 큰 기호, 튀어나오는 헤드라인</li>
+        <li>숏츠: 위쪽 고정 큰 제목(강조어 빨강), 가운데 당사자 사진·짧은 영상, 큰 자막</li>
       </ul></div>
       <div class="box no"><h3>내용은 보도된 사실만</h3><ul>
         <li>서로 다른 언론사 원문 2개 이상을 Claude가 직접 읽고 대조</li>
         <li>의혹·루머는 "~라는 보도/주장", 수사·재판 중은 "혐의"</li>
         <li>사생활 추측, 미성년자·피해자·일반인 신상, 모욕·혐오 제외</li>
-        <li>기사 문장 베끼기·인물 사진 사용 안 함, 정정 요청 시 즉시 내림</li>
+        <li>기사 문장 베끼기·기사 사진·방송 화면 사용 안 함. 인물 사진은 재사용 허락된 Commons 자료만, 혐의자·피해자·미성년자·일반인 제외. 정정 요청 시 즉시 내림</li>
       </ul></div>
     </div>
   </section>
@@ -103,7 +103,7 @@ footer { color: var(--muted); font-size: .82rem }
       <li><span class="t">02:12~</span><span class="w">이슈 선정</span><span class="d">Claude가 위험 이슈를 빼고 최대 3건 선정</span></li>
       <li><span class="t">02:15~</span><span class="w">원문 확인·작성</span><span class="d">웹 검색으로 기사 2~4개 확인 → 글·숏츠 대본</span></li>
       <li><span class="t">02:30~</span><span class="w">검사·검수</span><span class="d">규칙 검사 → 독립 검수(원문 대조, 명예훼손 위험) → 반려 시 재작성</span></li>
-      <li><span class="t">02:45~</span><span class="w">영상·배포</span><span class="d">숏츠 2편 → YouTube → 블로그 → Instagram</span></li>
+      <li><span class="t">02:45~</span><span class="w">영상·배포</span><span class="d">Commons 사진 검색·Claude 사진 검수 → 숏츠 2편 → YouTube → 블로그</span></li>
     </ol></div>
   </section>
 
@@ -130,6 +130,7 @@ footer { color: var(--muted); font-size: .82rem }
     <div class="tablewrap"><table>
       <thead><tr><th>날짜</th><th>변경</th><th>커밋</th></tr></thead>
       <tbody>
+        <tr><td class="date">11-17</td><td>숏츠 개편: 고정 제목 띠·인물 사진/영상·큰 자막, Commons 사진과 Claude 사진 검수</td><td class="c">—</td></tr>
         <tr><td class="date">11-17</td><td>2회차 실행: 글 2편 발행·숏츠 2편 YouTube 공개, 검수 권장 사항 자동 반영 단계 추가</td><td class="c">1d42878</td></tr>
         <tr><td class="date">11-17</td><td>YouTube 브랜드 채널 연결, 업로드 전 채널 이름 확인</td><td class="c">4194e20</td></tr>
         <tr><td class="date">11-16</td><td>1회차 실행(발행 0) 후 검수 기준·인용 규칙·버그 수정</td><td class="c">bf9bce8</td></tr>

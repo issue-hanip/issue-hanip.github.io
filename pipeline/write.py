@@ -55,8 +55,16 @@ STORY_SCHEMA = {
                    "properties": {"title": {"type": "string"},
                                   "scenes": {"type": "object", "properties": {k: _scene for k in SCENES},
                                              "required": SCENES, "additionalProperties": False},
-                                  "hashtags": {"type": "array", "items": {"type": "string"}}},
-                   "required": ["title", "scenes", "hashtags"], "additionalProperties": False},
+                                  "hashtags": {"type": "array", "items": {"type": "string"}},
+                                  "band": {"type": "object",
+                                           "properties": {"text": {"type": "string"}, "hot": {"type": "string"}},
+                                           "required": ["text", "hot"], "additionalProperties": False},
+                                  "people": {"type": "array", "items": {
+                                      "type": "object",
+                                      "properties": {"name_ko": {"type": "string"}, "name_en": {"type": "string"},
+                                                     "aliases": {"type": "array", "items": {"type": "string"}}},
+                                      "required": ["name_ko", "name_en", "aliases"], "additionalProperties": False}}},
+                   "required": ["title", "scenes", "hashtags", "band", "people"], "additionalProperties": False},
     },
     "required": ["title", "description", "tags", "body_md", "sources", "claims", "shorts"],
     "additionalProperties": False,
@@ -116,6 +124,12 @@ WRITE_SYSTEM = """당신은 한국 이슈·연예 소식 채널의 작가입니�
 - headline: 화면에 크게 뜨는 문구 14자 이내. narration: 읽을 문장, 장면당 40~85자, 전체 45초 안팎.
 - 규칙은 블로그와 같다 (의혹은 '보도에 따르면', 단정 금지).
 - title: 50자 이내 궁금증 제목. hashtags: 4~6개(# 없이), 인물·사건 키워드 중심.
+- band: 영상 내내 화면 위쪽에 고정되는 큰 제목. text는 16자 이내(예: "블랙핑크 YG 결별설 정리"),
+  hot은 text 안에 그대로 들어 있는 강조 단어 하나(빨간색으로 표시, 예: "결별설"). 본문 사실과 어긋나면 안 된다.
+- people: 영상에 사진을 보여줄 인물(최대 3명). 이 이슈의 당사자인 연예인·그룹·운동선수, 공식 활동 중인 공인만.
+  범죄·사고의 혐의자나 피해자, 미성년자, 일반인, 사생활 보도(연애·이혼·건강)의 당사자는 넣지 않는다. 해당이 없으면 빈 배열.
+  name_en은 위키미디어 공용(Wikimedia Commons) 파일 이름에 흔히 쓰는 영문 표기(예: "Cha Eun-woo", "BLACKPINK"),
+  aliases에는 다른 영문 표기(예: "Cha Eunwoo")를 0~3개 적는다.
 """
 
 REVIEW_SYSTEM = """당신은 언론사 법무·팩트체크 담당 편집장입니다. 발행 전 마지막 검수를 합니다.
@@ -129,6 +143,7 @@ approved는 blocking 문제가 하나도 없을 때 true입니다.
 (5) 기사 문장을 길게 베낌(한 문장 넘는 그대로 옮김)
 (6) 정치적으로 한쪽 편을 듦, 자살·자해 방법 묘사
 (7) 문장이 깨지거나 반복이 심함
+(8) shorts.people에 혐의자·피해자·미성년자·일반인·사생활 보도 당사자가 들어 있거나, 이슈와 관계없는 인물이 들어 있음
 자극적인 문체·궁금증 유발 자체는 문제가 아닙니다. 사실과 선을 지키는지만 봅니다.
 risk: 명예훼손·사생활 위험 수준. '높음'이면 approved=false.
 """ + RULES
@@ -163,13 +178,16 @@ class ClaudeWriter:
         self.env = {k: v for k, v in os.environ.items() if k not in ("ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN")}
         self.workdir = tempfile.mkdtemp(prefix="writer-")
 
-    def _call(self, system: str, user: str, schema: dict, effort: str, web: bool = False) -> dict:
-        tools = self.WEB if web else []
+    def _call(self, system: str, user: str, schema: dict, effort: str, web: bool = False,
+              tools: list[str] | None = None, add_dir: str | None = None) -> dict:
+        tools = tools if tools is not None else (self.WEB if web else [])
         cmd = [self.bin, "-p", "--output-format", "json", "--json-schema", json.dumps(schema),
                "--system-prompt", system, "--tools", ",".join(tools), "--strict-mcp-config",
                "--model", self.model, "--effort", effort, "--no-session-persistence"]
-        if web:
+        if tools:
             cmd += ["--allowedTools", *tools]
+        if add_dir:
+            cmd += ["--add-dir", add_dir]
         last = ""
         for attempt in range(3):
             try:
@@ -234,6 +252,26 @@ class ClaudeWriter:
         return self._call(system, user, STORY_SCHEMA, self.effort)
 
 
+    def vet_photos(self, paths: list, names: str) -> set[int]:
+        """숏츠에 넣을 사진 후보를 Claude가 직접 보고 고른다 (얼굴로 신원을 판별하지는 않는다)."""
+        from pathlib import Path
+        paths = [Path(p).resolve() for p in paths]
+        listing = "\n".join(f"{i}: {p}" for i, p in enumerate(paths))
+        user = (f"이슈 영상에 쓸 사진 후보입니다. 파일 이름상 인물/그룹: {names}\n"
+                "Read 도구로 각 이미지를 열어 보고, 아래 조건을 모두 만족하는 번호만 ok에 넣으세요.\n"
+                "(a) 무대·시상식·레드카펫·제작발표회·화보처럼 공식 활동 중인 연예인/공인이 사진의 주인공이다\n"
+                "(b) 관계없어 보이는 일반인(행인·관객·직원)의 얼굴이 크게 나오지 않는다\n"
+                "(c) 광고판·포스터·상품·부스·거리 풍경 위주의 사진이 아니다\n"
+                "(d) 선정적이거나 사고·부상 장면이 아니고, 이미지가 깨지지 않았다\n"
+                "얼굴로 누구인지 판별하려 하지 말고 위 조건만 보세요.\n\n" + listing)
+        schema = {"type": "object", "properties": {"ok": {"type": "array", "items": {"type": "integer"}},
+                                                   "notes": {"type": "string"}},
+                  "required": ["ok", "notes"], "additionalProperties": False}
+        out = self._call("당신은 영상 편집 담당자입니다. 사진 사용 적합성만 판단합니다.", user, schema, "low",
+                         tools=["Read"], add_dir=str(paths[0].parent) if paths else None)
+        return {int(i) for i in out.get("ok", []) if 0 <= int(i) < len(paths)}
+
+
 class FakeWriter:
     """테스트용: Claude를 부르지 않고 규칙을 지키는 고정 원고를 돌려준다."""
 
@@ -260,7 +298,8 @@ class FakeWriter:
                 "sources": [{"outlet": "가신문", "url": "https://example.com/a", "title": "기사 1"},
                             {"outlet": "나일보", "url": "https://example.org/b", "title": "기사 2"}],
                 "claims": [{"claim": "촬영 중 부상", "status": "확인된 사실", "source_outlet": "가신문"}],
-                "shorts": {"title": "다쳤는데 촬영은 계속? 무슨 일", "scenes": scenes, "hashtags": ["연예", "이슈"]}}
+                "shorts": {"title": "다쳤는데 촬영은 계속? 무슨 일", "scenes": scenes, "hashtags": ["연예", "이슈"],
+                           "band": {"text": "촬영 중 부상, 왜 계속?", "hot": "부상"}, "people": []}}
 
     def review(self, story):
         return {"approved": self.approve, "issues": [] if self.approve else ["테스트 반려"], "suggestions": [],

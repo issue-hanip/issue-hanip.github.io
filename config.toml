@@ -42,6 +42,9 @@ tts_provider = "auto"
 voice = "ko-KR-SunHiNeural"
 max_seconds = 58
 max_narration_chars = 95
+media = true          # Wikimedia Commons 인물 사진·영상 (재사용 허락된 것만)
+max_photos = 4
+max_clips = 1
 
 [youtube]
 upload = true                 # YT_* 비밀값이 있을 때만 실제 업로드
