@@ -4,7 +4,7 @@
 [site]
 title = "이슈 한입"
 tagline = "오늘 다들 이야기하는 그 사건, 한입에 정리"
-base_url = "https://example.github.io"   # 저장소 Variables의 SITE_BASE_URL이 우선
+base_url = "https://issue-hanip.github.io"   # 저장소 Variables의 SITE_BASE_URL이 우선
 language = "ko"
 author = "이슈 한입 편집팀"
 contact_email = ""
