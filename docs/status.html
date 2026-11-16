@@ -1,0 +1,142 @@
+<title>이슈 한입 운영 현황</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: 출범 관제판 — "단계 진행 → 각색의 선 → 하루 흐름 → 할 일 → 기록". 상태는 색 띠와 알약으로 */
+:root {
+  --bg: #f6f4f1; --panel: #ffffff; --ink: #1d1a17; --muted: #6a625a; --line: #e4ded6;
+  --accent: #c2281d; --ok: #1e7a4f; --warn: #a86700; --wait: #6b7280;
+  --ok-bg: #e5f3ec; --warn-bg: #fbf0dc; --wait-bg: #eceef1; --chip: #f6e7e4;
+  --sans: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #151312; --panel: #1f1c1a; --ink: #eee9e4; --muted: #a59c93; --line: #332e2a;
+  --accent: #f0776c; --ok: #5cc493; --warn: #e2a73c; --wait: #9ca3af;
+  --ok-bg: #15301f; --warn-bg: #352a12; --wait-bg: #2a2d33; --chip: #3a211e; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #151312; --panel: #1f1c1a; --ink: #eee9e4; --muted: #a59c93; --line: #332e2a;
+  --accent: #f0776c; --ok: #5cc493; --warn: #e2a73c; --wait: #9ca3af;
+  --ok-bg: #15301f; --warn-bg: #352a12; --wait-bg: #2a2d33; --chip: #3a211e; color-scheme: dark }
+* { box-sizing: border-box }
+body { background: var(--bg); color: var(--ink); font-family: var(--sans); font-size: 15px; line-height: 1.6;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 28px 48px }
+.wrap { max-width: 1040px; margin: 0 auto; display: grid; gap: 28px }
+header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: 12px; border-bottom: 3px solid var(--accent); padding-bottom: 14px }
+h1 { font-size: 1.7rem; margin: 0; text-wrap: balance }
+.sub { color: var(--muted); margin: 2px 0 0 }
+.stamp { font-family: var(--mono); font-size: .85rem; color: var(--muted); text-align: right }
+.stamp b { color: var(--ink); font-weight: 500 }
+h2 { font-size: .8rem; letter-spacing: .08em; color: var(--muted); margin: 0 0 10px; font-weight: 500 }
+section { min-width: 0 }
+.steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px }
+.step { background: var(--panel); border: 1px solid var(--line); border-left: 4px solid var(--wait); border-radius: 8px; padding: 12px 14px; display: grid; gap: 4px }
+.step.ok { border-left-color: var(--ok) } .step.warn { border-left-color: var(--warn) }
+.step .n { font-weight: 700 } .step .d { color: var(--muted); font-size: .85rem }
+.pill { display: inline-block; font-size: .75rem; font-weight: 500; padding: 1px 8px; border-radius: 999px; justify-self: start }
+.pill.ok { background: var(--ok-bg); color: var(--ok) } .pill.warn { background: var(--warn-bg); color: var(--warn) } .pill.wait { background: var(--wait-bg); color: var(--wait) }
+.line { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px }
+.box { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; min-width: 0 }
+.box h3 { margin: 0 0 8px; font-size: 1rem }
+.box ul, .box ol { margin: 0; padding-left: 1.2em; display: grid; gap: 6px }
+.yes h3 { color: var(--ok) } .no h3 { color: var(--accent) }
+.flow { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; overflow-x: auto }
+.flow ol { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(150px, 1fr)); min-width: 780px }
+.flow li { padding: 0 14px; border-left: 2px solid var(--line); display: grid; gap: 4px; align-content: start }
+.flow li:first-child { border-left-color: var(--accent) }
+.flow .t { font-family: var(--mono); color: var(--accent); font-size: .85rem }
+.flow .w { font-weight: 700 } .flow .d { color: var(--muted); font-size: .85rem }
+.tablewrap { overflow-x: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 10px }
+table { width: 100%; border-collapse: collapse; font-size: .9rem }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top }
+th { font-size: .78rem; color: var(--muted); font-weight: 500 }
+tr:last-child td { border-bottom: 0 }
+td.date, td.c { font-family: var(--mono); font-size: .82rem; white-space: nowrap; color: var(--muted) }
+code { font-family: var(--mono); font-size: .85em; background: var(--chip); padding: 0 4px; border-radius: 4px }
+footer { color: var(--muted); font-size: .82rem }
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <h1>이슈 한입 운영 현황</h1>
+      <p class="sub">오늘 화제가 된 연예·사회 이슈를 보도 기반으로 한입에 정리하는 자동 채널 (블로그·YouTube·Instagram·TikTok)</p>
+    </div>
+    <div class="stamp">마지막 갱신 <b>2026-11-16</b><br>상태 <b>출범 준비</b></div>
+  </header>
+
+  <section>
+    <h2>출범 단계</h2>
+    <div class="steps">
+      <div class="step ok"><span class="n">파이프라인 코드</span><span class="pill ok">완료</span><span class="d">수집·선정·작성·검사·검수·숏츠·사이트·글 내리기, 테스트 7개 통과</span></div>
+      <div class="step ok"><span class="n">숏츠 화면</span><span class="pill ok">시험 렌더 확인</span><span class="d">테마 4종, 인물 사진 없이 글자·기호 모션</span></div>
+      <div class="step"><span class="n">실제 글 품질</span><span class="pill wait">대기</span><span class="d">저장소 Actions 첫 실행에서 Claude가 직접 검토</span></div>
+      <div class="step"><span class="n">저장소·블로그</span><span class="pill wait">사용자: 새 GitHub 조직</span><span class="d">조직 이름이 블로그 주소가 됨</span></div>
+      <div class="step"><span class="n">YouTube</span><span class="pill wait">사용자: 브랜드 채널 추가</span><span class="d">같은 Google 계정, 채널별 업로드 권한</span></div>
+      <div class="step"><span class="n">Instagram</span><span class="pill wait">사용자: 계정 추가</span><span class="d">새 비즈니스 포트폴리오로 위험 분리</span></div>
+      <div class="step"><span class="n">TikTok</span><span class="pill wait">사용자: 계정 추가</span><span class="d">PC 예약 작업으로 업로드</span></div>
+      <div class="step"><span class="n">성과 학습·매일 점검</span><span class="pill wait">발행 시작 후</span><span class="d">실거래가 채널 방식 이식</span></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>각색의 선 (사용자 결정)</h2>
+    <div class="line">
+      <div class="box yes"><h3>형식은 자극적으로</h3><ul>
+        <li>궁금증을 부르는 질문·반전 제목과 첫 문장</li>
+        <li>짧은 구어체, "그런데", "여기서 반전" 같은 전개</li>
+        <li>숏츠: 장면 배지 도장, 큰 기호, 튀어나오는 헤드라인</li>
+      </ul></div>
+      <div class="box no"><h3>내용은 보도된 사실만</h3><ul>
+        <li>서로 다른 언론사 원문 2개 이상을 Claude가 직접 읽고 대조</li>
+        <li>의혹·루머는 "~라는 보도/주장", 수사·재판 중은 "혐의"</li>
+        <li>사생활 추측, 미성년자·피해자·일반인 신상, 모욕·혐오 제외</li>
+        <li>기사 문장 베끼기·인물 사진 사용 안 함, 정정 요청 시 즉시 내림</li>
+      </ul></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>하루 자동 흐름 (KST)</h2>
+    <div class="flow"><ol>
+      <li><span class="t">02:10</span><span class="w">뉴스 수집</span><span class="d">Google 뉴스 종합·연예 RSS에서 후보 25건</span></li>
+      <li><span class="t">02:12~</span><span class="w">이슈 선정</span><span class="d">Claude가 위험 이슈를 빼고 최대 3건 선정</span></li>
+      <li><span class="t">02:15~</span><span class="w">원문 확인·작성</span><span class="d">웹 검색으로 기사 2~4개 확인 → 글·숏츠 대본</span></li>
+      <li><span class="t">02:30~</span><span class="w">검사·검수</span><span class="d">규칙 검사 → 독립 검수(원문 대조, 명예훼손 위험) → 반려 시 재작성</span></li>
+      <li><span class="t">02:45~</span><span class="w">영상·배포</span><span class="d">숏츠 2편 → YouTube → 블로그 → Instagram</span></li>
+    </ol></div>
+  </section>
+
+  <section class="line">
+    <div class="box">
+      <h2>사용자가 할 일</h2>
+      <ul>
+        <li>채널 이름 확인 (임시: 이슈 한입)</li>
+        <li>GitHub 새 조직 만들기 (무료)</li>
+        <li>터미널에서 <code>claude setup-token</code> 실행 후 값 복사 (Claude가 보지 않고 등록)</li>
+        <li>YouTube 브랜드 채널, Instagram·TikTok 계정 추가</li>
+      </ul>
+    </div>
+    <div class="box">
+      <h2>Claude가 할 일</h2>
+      <ol>
+        <li>저장소 만들기·Pages·비밀값 등록</li>
+        <li>Actions 첫 실행 후 실제 글을 원문과 대조 검토</li>
+        <li>YouTube·Instagram·TikTok 연결</li>
+        <li>성과 학습·매일 점검 예약 작업 추가</li>
+      </ol>
+    </div>
+  </section>
+
+  <section>
+    <h2>변경 기록</h2>
+    <div class="tablewrap"><table>
+      <thead><tr><th>날짜</th><th>변경</th><th>커밋</th></tr></thead>
+      <tbody>
+        <tr><td class="date">11-16</td><td>프로젝트 시작: 뉴스 수집·Claude 선정/원문 확인 작성/독립 검수·규칙 검사·숏츠 렌더러·사이트(출처·정정 안내)·글 내리기 명령</td><td class="c">13ea22a</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <footer>상세 기준은 docs/MASTER.md, 진행 기록은 docs/STATUS.md (로컬 폴더 claude_gossip). 실거래가 리포트와는 별도 저장소·별도 현황 페이지입니다.</footer>
+</div>
