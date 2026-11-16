@@ -3,7 +3,16 @@ name: daily-pipeline
 on:
   schedule:
     - cron: "10 17 * * *"  # 매일 02:10 KST (구독 사용량이 큰 작업은 새벽 1~3시, 실거래가 채널 01:00와 겹치지 않게)
-  workflow_dispatch: {}      # Actions 탭에서 수동 실행
+  workflow_dispatch:         # Actions 탭에서 수동 실행 (발행 수를 줄여 시험할 수 있음)
+    inputs:
+      max_stories:
+        description: "이번 실행의 최대 글 수 (비우면 설정값)"
+        required: false
+        default: ""
+      max_shorts:
+        description: "이번 실행의 최대 숏츠 수 (비우면 설정값)"
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -53,6 +62,8 @@ jobs:
           YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
           YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
           YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
+          MAX_STORIES: ${{ inputs.max_stories }}
+          MAX_SHORTS: ${{ inputs.max_shorts }}
         run: |
           set +e
           python -m pipeline.run all

@@ -169,6 +169,11 @@ def main(argv=None):
     args = ap.parse_args(argv)
 
     cfg = load_config()
+    # 수동 실행에서 이번만 발행 수를 줄일 때 (설정값보다 늘리지는 않음)
+    for env, sec, key in (("MAX_STORIES", "generate", "max_stories_per_run"), ("MAX_SHORTS", "shorts", "max_per_run")):
+        v = os.environ.get(env, "").strip()
+        if v.isdigit():
+            cfg[sec][key] = min(int(v), cfg[sec][key])
     conn = db.connect(DATA_DIR / "demo.db" if args.fake_writer else DB_PATH)
     if args.command == "withdraw":
         ok = withdraw(conn, args.slug or "")
