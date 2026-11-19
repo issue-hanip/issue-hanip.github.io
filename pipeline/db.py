@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS candidates (
 CREATE TABLE IF NOT EXISTS stories (
     slug TEXT PRIMARY KEY,
     candidate_id TEXT,
-    category TEXT NOT NULL,           -- 연예 | 사회 | 화제 | 스포츠 | 경제 | 기타
+    category TEXT NOT NULL,           -- 연예 | 사회 | 화제 | 트렌드 | 꿀팁 | 스포츠 | 경제 | 기타
     title TEXT NOT NULL,
     description TEXT NOT NULL,
     body_md TEXT NOT NULL,

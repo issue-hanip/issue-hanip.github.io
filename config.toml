@@ -13,9 +13,14 @@ google_site_verification = ""
 
 [news]
 # 무료 RSS (Google 뉴스 한국판). 한 이슈에 여러 언론사가 붙을수록 화제성이 높다고 본다.
+# trend 검색어: 오픈런·품절대란·열풍·웨이팅·신드롬 / tips 검색어: 총정리·신청방법·달라지는·놓치면 (최근 2일)
+# share: Claude에게 보여 줄 후보 중 이 피드 몫 (합이 candidates_for_pick). 11-19 국내 이슈·트렌드·꿀팁 추가.
 feeds = [
-  { name = "top", url = "https://news.google.com/rss?hl=ko&gl=KR&ceid=KR:ko" },
-  { name = "entertainment", url = "https://news.google.com/rss/headlines/section/topic/ENTERTAINMENT?hl=ko&gl=KR&ceid=KR:ko" },
+  { name = "entertainment", share = 9, url = "https://news.google.com/rss/headlines/section/topic/ENTERTAINMENT?hl=ko&gl=KR&ceid=KR:ko" },
+  { name = "top", share = 4, url = "https://news.google.com/rss?hl=ko&gl=KR&ceid=KR:ko" },
+  { name = "nation", share = 4, url = "https://news.google.com/rss/headlines/section/topic/NATION?hl=ko&gl=KR&ceid=KR:ko" },
+  { name = "trend", share = 4, url = "https://news.google.com/rss/search?q=%EC%98%A4%ED%94%88%EB%9F%B0%20OR%20%ED%92%88%EC%A0%88%EB%8C%80%EB%9E%80%20OR%20%EC%97%B4%ED%92%8D%20OR%20%EC%9B%A8%EC%9D%B4%ED%8C%85%20OR%20%EC%8B%A0%EB%93%9C%EB%A1%AC%20when%3A2d&hl=ko&gl=KR&ceid=KR:ko" },
+  { name = "tips", share = 4, url = "https://news.google.com/rss/search?q=%EC%B4%9D%EC%A0%95%EB%A6%AC%20OR%20%EC%8B%A0%EC%B2%AD%EB%B0%A9%EB%B2%95%20OR%20%EB%8B%AC%EB%9D%BC%EC%A7%80%EB%8A%94%20OR%20%EB%86%93%EC%B9%98%EB%A9%B4%20when%3A2d&hl=ko&gl=KR&ceid=KR:ko" },
 ]
 max_age_hours = 36            # 이보다 오래된 기사는 후보에서 뺀다
 candidates_for_pick = 25      # Claude에게 보여 줄 후보 수

@@ -12,7 +12,8 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 from .config import PUBLIC_DIR, ROOT
 
 KST = timezone(timedelta(hours=9))
-CAT_SLUG = {"연예": "entertainment", "사회": "society", "화제": "trending", "스포츠": "sports", "경제": "economy",
+CAT_SLUG = {"연예": "entertainment", "사회": "society", "화제": "trending", "트렌드": "trend", "꿀팁": "tips",
+            "스포츠": "sports", "경제": "economy",
             "기타": "etc"}
 
 

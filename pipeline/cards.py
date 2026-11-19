@@ -139,7 +139,7 @@ class Scene:
         img = Image.new("RGBA", (W, MY0), (0, 0, 0, 255))
         d = ImageDraw.Draw(img)
         f = font(38, bold=False)
-        label = f"{category} 이슈 · {site_title}"
+        label = f"{category if category in ('트렌드', '꿀팁') else category + ' 이슈'} · {site_title}"
         d.text(((W - d.textlength(label, font=f)) / 2, 70), label, font=f, fill=self.th["muted"])
         text, hot = band.get("text", ""), band.get("hot", "")
         bf = font(104)

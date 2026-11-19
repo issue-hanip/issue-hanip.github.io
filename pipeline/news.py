@@ -7,6 +7,7 @@ import hashlib
 import html
 import json
 import re
+import time
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
@@ -55,10 +56,20 @@ def parse(xml_bytes: bytes, feed: str) -> list[dict]:
 
 def fetch(cfg) -> list[dict]:
     items = []
-    for f in cfg["news"]["feeds"]:
-        r = requests.get(f["url"], headers=UA, timeout=30)
-        r.raise_for_status()
-        items += parse(r.content, f["name"])
+    errors = []
+    for i, f in enumerate(cfg["news"]["feeds"]):
+        if i:
+            time.sleep(1.5)                 # 연달아 요청하면 429가 난다
+        try:
+            r = requests.get(f["url"], headers=UA, timeout=30)
+            r.raise_for_status()
+            items += parse(r.content, f["name"])
+        except (requests.RequestException, ET.ParseError) as e:
+            errors.append(f"{f['name']}: {e}")
+    if errors and not items:
+        raise requests.RequestException("; ".join(errors))
+    for e in errors:
+        print(f"  피드 일부 실패(나머지로 진행): {e}")
     return items
 
 
@@ -78,13 +89,15 @@ def store(conn, items: list[dict]) -> int:
 
 def recent(conn, cfg) -> list:
     """아직 쓰지 않은 최근 후보. 피드마다 Google 뉴스 노출 순서(rank)대로 나눠 뽑는다.
-    연예 피드에 몫을 더 준다 (채널 성격)."""
+    피드별 몫은 config의 share (없으면 나머지를 고르게)."""
     since = (datetime.now(timezone.utc) - timedelta(hours=cfg["news"]["max_age_hours"])).isoformat(timespec="seconds")
     n = cfg["news"]["candidates_for_pick"]
-    share = {"entertainment": n * 3 // 5}
+    feeds = cfg["news"]["feeds"]
+    fixed = sum(f.get("share", 0) for f in feeds)
+    rest = [f for f in feeds if not f.get("share")]
     out = []
-    for f in cfg["news"]["feeds"]:
-        k = share.get(f["name"], n - share.get("entertainment", 0))
+    for f in feeds:
+        k = f.get("share") or max(1, (n - fixed) // max(1, len(rest)))
         out += conn.execute(
             """SELECT * FROM candidates WHERE status = 'new' AND feed = ? AND published_at >= ?
                ORDER BY seen_at DESC, rank ASC LIMIT ?""", (f["name"], since, k)).fetchall()
