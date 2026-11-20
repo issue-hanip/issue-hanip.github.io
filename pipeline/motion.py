@@ -16,7 +16,7 @@ from pathlib import Path
 
 from . import cards
 
-HF_VERSION = "0.9.73"
+HF_VERSION = "0.9.72"
 ASSETS = Path(__file__).parent / "motion_assets"
 W, H, MY0, MH = 1080, 1920, 470, 1000
 LABEL = {"트렌드": "트렌드", "꿀팁": "꿀팁"}
