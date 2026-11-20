@@ -48,6 +48,29 @@ PROVIDERS = {"edge": _edge, "gtts": _gtts, "silent": _silent}
 CHAINS = {"auto": ["edge", "gtts"]}
 
 
+def speak_words(text: str, path, provider: str, voice: str) -> tuple[float, list | None]:
+    """음성 + 단어별 시각 [(시작초, 길이초, 단어)]. edge-tts만 시각을 주고, 실패하면 시각 없이 speak()."""
+    if provider in ("auto", "edge"):
+        try:
+            import edge_tts
+
+            words = []
+
+            async def go():
+                c = edge_tts.Communicate(text, voice, rate="+8%", boundary="WordBoundary")
+                with open(path, "wb") as f:
+                    async for ch in c.stream():
+                        if ch["type"] == "audio":
+                            f.write(ch["data"])
+                        elif ch["type"] == "WordBoundary":
+                            words.append((ch["offset"] / 1e7, ch["duration"] / 1e7, ch["text"]))
+            asyncio.run(go())
+            return duration(path), words or None
+        except Exception:  # noqa: BLE001 - 시각 없이 다시
+            pass
+    return speak(text, path, provider, voice), None
+
+
 def speak(text: str, path, provider: str, voice: str) -> float:
     chain = CHAINS.get(provider, [provider])
     errors = []

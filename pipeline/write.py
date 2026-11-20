@@ -288,6 +288,62 @@ class ClaudeWriter:
                          tools=["Read"], add_dir=str(paths[0].parent) if paths else None)
         return {int(i) for i in out.get("ok", []) if 0 <= int(i) < len(paths)}
 
+    def vet_topic_photos(self, paths: list, wants: list[str]) -> set[int]:
+        """이해를 돕는 자료 사진(인물 아님) 후보를 Claude가 보고 고른다. wants[i] = i번 사진이 보여 줘야 할 것."""
+        from pathlib import Path
+        paths = [Path(p).resolve() for p in paths]
+        listing = "\n".join(f"{i}: {p}  (보여 줄 것: {w})" for i, (p, w) in enumerate(zip(paths, wants)))
+        user = ("이슈 숏폼 영상에 '자료 사진'으로 쓸 후보입니다. 실제 사건 사진이 아니라 이해를 돕는 사진입니다.\n"
+                "Read 도구로 각 이미지를 열어 보고, 아래 조건을 모두 만족하는 번호만 ok에 넣으세요.\n"
+                "(a) '보여 줄 것'이 사진의 주인공으로 한눈에 보인다\n"
+                "(b) 일반인의 얼굴이 알아볼 수 있을 만큼 크게 나오지 않는다 (뒷모습·작은 군중은 괜찮음)\n"
+                "(c) 선정적·폭력적·사고 장면이 아니고, 흐리거나 깨지지 않았다\n"
+                "(d) 특정 사건 현장으로 오해될 장면(사고·시위·범죄 현장)이나, 이슈와 다른 특정 회사·상표가 크게 보이지 않는다\n"
+                "(e) 워터마크·큰 글자가 화면을 가리지 않는다\n\n" + listing)
+        schema = {"type": "object", "properties": {"ok": {"type": "array", "items": {"type": "integer"}},
+                                                   "notes": {"type": "string"}},
+                  "required": ["ok", "notes"], "additionalProperties": False}
+        out = self._call("당신은 영상 편집 담당자입니다. 자료 사진 적합성만 판단합니다.", user, schema, "low",
+                         tools=["Read"], add_dir=str(paths[0].parent) if paths else None)
+        return {int(i) for i in out.get("ok", []) if 0 <= int(i) < len(paths)}
+
+    def plan_visuals(self, story: dict, has_people: bool) -> dict:
+        """숏츠 장면마다 화면에 무엇을 보여 줄지 정한다 (새 사실 없이 대본에 있는 내용만)."""
+        user = ("숏츠 대본과 글(JSON):\n" + json.dumps(story, ensure_ascii=False, indent=1)
+                + f"\n\n인물 사진 사용 가능: {'예' if has_people else '아니오 (person 쓰지 말 것)'}")
+        return self._call(VISUAL_SYSTEM, user, VISUAL_SCHEMA, "low")
+
+
+VISUAL_SCHEMA = {
+    "type": "object",
+    "properties": {"scenes": {"type": "array", "minItems": 5, "maxItems": 5, "items": {
+        "type": "object",
+        "properties": {
+            "scene": {"type": "string", "enum": SCENES},
+            "kind": {"type": "string", "enum": ["person", "photo", "emoji", "number", "list"]},
+            "query_en": {"type": "string"}, "emoji": {"type": "string"},
+            "big": {"type": "string"}, "sub": {"type": "string"},
+            "items": {"type": "array", "maxItems": 3, "items": {"type": "string"}}},
+        "required": ["scene", "kind", "query_en", "emoji", "big", "sub", "items"], "additionalProperties": False}}},
+    "required": ["scenes"], "additionalProperties": False,
+}
+
+VISUAL_SYSTEM = """당신은 숏폼 영상의 미술 감독입니다. 장면 5개(hook, what, twist, reaction, outro) 각각에 화면 가운데에
+보여 줄 그림을 정합니다. 목표: 글자만 나오는 장면 없이, 시청자가 내용을 한눈에 이해하게.
+kind:
+- person: 이 이슈 당사자(공인)의 사진. 인물 사진 사용 가능이 '예'일 때만, 최대 2장면.
+- photo: 이해를 돕는 자료 사진. query_en에 사진 검색어(영어 2~4단어, 구체적인 사물·장소, 예: "roller coaster amusement park",
+  "airplane window seat", "courtroom gavel", "exam answer sheet pencil"). 특정 인물·특정 회사 이름을 넣지 않는다.
+- emoji: 3D 이모지 하나를 크게 움직여 보여 줌. 사물·감정을 상징 (예: 🎢 ✈️ ⚖️ 💸 📝 🎂 😭).
+- number: 대본에 나온 숫자 하나를 크게 (big: "25%", "2만원", "98명", "8.7억" / sub: 그 숫자가 무엇인지 12자 이내).
+- list: 대본의 핵심 2~3개를 체크리스트로 (items 각 12자 이내).
+규칙:
+- big·sub·items는 대본·글에 있는 사실만 쓴다. 새 숫자·새 사실을 만들지 않는다.
+- 장면마다 다른 kind를 섞는다. photo는 2~3장면, number·list는 대본에 숫자·항목이 있을 때만.
+- emoji 칸은 모든 장면에 채운다 (사진을 못 구했을 때 대신 보여 줌). 쓰지 않는 칸은 빈 문자열·빈 배열.
+- 범죄·사고·법원 이슈에서 자극적인 자료 사진(피·흉기·사고 현장)은 고르지 않는다. 법원 이슈는 "courthouse building", "gavel" 정도.
+"""
+
 
 class FakeWriter:
     """테스트용: Claude를 부르지 않고 규칙을 지키는 고정 원고를 돌려준다."""
@@ -321,3 +377,13 @@ class FakeWriter:
     def review(self, story):
         return {"approved": self.approve, "issues": [] if self.approve else ["테스트 반려"], "suggestions": [],
                 "risk": "낮음"}
+
+    def plan_visuals(self, story, has_people):
+        kinds = ["emoji", "number", "photo", "list", "emoji"]
+        return {"scenes": [{"scene": k, "kind": kinds[i], "query_en": "film camera" if kinds[i] == "photo" else "",
+                            "emoji": "🎬", "big": "3일" if kinds[i] == "number" else "", "sub": "촬영 중단",
+                            "items": ["부상", "촬영 계속"] if kinds[i] == "list" else []}
+                           for i, k in enumerate(SCENES)]}
+
+    def vet_topic_photos(self, paths, wants):
+        return set(range(len(paths)))
