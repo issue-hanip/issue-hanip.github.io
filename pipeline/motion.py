@@ -134,7 +134,7 @@ def build(project: Path, story: dict, sh: dict, scenes: list[dict], parts: list[
             js.append(f'tl.from("#{sid} .hero",{{scale:0,rotation:-35,duration:0.7,ease:"back.out(1.8)"}},{offset + 0.05:.3f});')
             js.append(f'tl.to("#{sid} .hero",{{y:-40,rotationY:18,duration:1.1,yoyo:true,repeat:{max(1, int(secs / 1.1))},ease:"sine.inOut"}},{offset + 0.75:.3f});')
             js.append(f'tl.fromTo("#{sid} .ring",{{scale:0.6,opacity:0.9}},{{scale:1.5,opacity:0,duration:1.4,repeat:{max(1, int(secs / 1.4))},ease:"power1.out"}},{offset:.3f});')
-        js.append(f'tl.fromTo("#{sid} .orbs i",{{y:0}},{{y:-120,x:"random(-80,80)",duration:{secs:.2f},stagger:0.2,ease:"sine.inOut"}},{offset:.3f});')
+        js.append(f'tl.fromTo("#{sid} .orbs i",{{y:0}},{{y:-120,x:(k)=>[60,-70,40][k%3],duration:{secs:.2f},stagger:0.2,ease:"sine.inOut"}},{offset:.3f});')
         # 자막
         caps = []
         for k, ch in enumerate(caption_chunks(p.get("words"), p["narration"], secs)):
@@ -149,7 +149,7 @@ def build(project: Path, story: dict, sh: dict, scenes: list[dict], parts: list[
         # 헤드라인·전환
         js.append(f'tl.fromTo("#h{i}",{{y:120,opacity:0}},{{y:0,opacity:1,duration:0.35,ease:"power3.out"}},{offset:.3f});')
         if i:
-            js.append(f'tl.fromTo("#flash",{{opacity:0.85}},{{opacity:0,duration:0.3}},{offset:.3f});')
+            js.append(f'tl.fromTo("#flash",{{opacity:0.85}},{{opacity:0,duration:0.3,immediateRender:false}},{offset:.3f});')
         js.append(f'tl.from("#{sid}",{{clipPath:"inset(0 0 100% 0)",duration:0.35,ease:"power2.out"}},{offset:.3f});')
         body.append(f'<section class="clip scene" id="{sid}" data-start="{offset:.3f}" data-duration="{secs:.3f}" '
                     f'data-track-index="1">{"".join(inner)}<div class="caps">{"".join(caps)}</div></section>')
@@ -173,7 +173,7 @@ def build(project: Path, story: dict, sh: dict, scenes: list[dict], parts: list[
 * {{ box-sizing: border-box; margin: 0; padding: 0 }}
 body {{ background: #000; }}
 #root {{ position: relative; width: {W}px; height: {H}px; overflow: hidden; background: {bg};
-  font-family: "NanumGothic", "Noto Sans CJK KR", sans-serif; color: {th['text']} }}
+  font-family: "Noto Sans KR", sans-serif; color: {th['text']} }}
 .clip {{ position: absolute }}
 #top {{ position: absolute; left: 0; top: 0; width: {W}px; height: {MY0}px; background: #000; z-index: 5;
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; padding: 40px 50px 30px }}
@@ -195,7 +195,7 @@ body {{ background: #000; }}
 .ring {{ position: absolute; left: 240px; top: 110px; width: 600px; height: 600px; border-radius: 50%;
   border: 10px solid {th['accent']} }}
 .emo {{ position: absolute; filter: drop-shadow(0 30px 40px rgba(0,0,0,.45)) }}
-.emo.txt {{ font-family: "Noto Color Emoji"; text-align: center }}
+.emo.txt {{ font-family: "Noto Color Emoji", sans-serif; text-align: center }}
 .emo.hero {{ left: 260px; top: 110px; width: 560px; height: 560px; font-size: 460px; line-height: 560px }}
 .emo.side {{ right: 60px; top: 60px; width: 240px; height: 240px; font-size: 200px; line-height: 240px; transform: rotate(12deg) }}
 .emo.top {{ left: 50px; top: 40px; width: 200px; height: 200px; font-size: 170px; line-height: 200px; transform: rotate(-10deg) }}
@@ -209,8 +209,8 @@ body {{ background: #000; }}
   background: {th['accent']}; color: #111; font-size: 52px; flex: none }}
 .caps {{ position: absolute; left: 40px; right: 40px; bottom: 60px; height: 260px }}
 .cap {{ position: absolute; left: 0; right: 0; bottom: 0; text-align: center; visibility: hidden; opacity: 0;
-  font-size: 84px; font-weight: 800; line-height: 1.22; word-break: keep-all; color: #fff;
-  -webkit-text-stroke: 10px #000; paint-order: stroke fill }}
+  font-size: 92px; font-weight: 900; line-height: 1.2; word-break: keep-all; color: #fff;
+  -webkit-text-stroke: 14px #000; paint-order: stroke fill; text-shadow: 0 8px 18px rgba(0,0,0,.6) }}
 .cap .w {{ display: inline-block }}
 .cap .w.hot {{ color: {th['accent']} }}
 .head {{ left: 50px; right: 50px; top: {MY0 + MH + 50}px; z-index: 4; text-align: center }}
