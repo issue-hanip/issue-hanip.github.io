@@ -21,7 +21,9 @@ ASSETS = Path(__file__).parent / "motion_assets"
 W, H, MY0, MH = 1080, 1920, 470, 1000
 LABEL = {"트렌드": "트렌드", "꿀팁": "꿀팁"}
 # 렌더 서버(우분투)에 설치된 무료 글꼴을 프로젝트에 넣어 @font-face로 선언한다 (렌더러가 글꼴을 확실히 쓰게)
-SYSTEM_FONTS = [("NanumGothic", "/usr/share/fonts/truetype/nanum/NanumGothicExtraBold.ttf"),
+NANUM = "/usr/share/fonts/truetype/nanum/"
+SYSTEM_FONTS = [("NanumGothic", next((NANUM + f for f in ("NanumGothicExtraBold.ttf", "NanumSquareEB.ttf", "NanumGothicBold.ttf",
+                                                         "NanumBarunGothicBold.ttf") if Path(NANUM + f).exists()), "")),
                 ("NotoEmoji", "/usr/share/fonts/truetype/noto/NotoColorEmoji.ttf")]
 
 
@@ -78,7 +80,7 @@ def build(project: Path, story: dict, sh: dict, scenes: list[dict], parts: list[
         shutil.copy(f, project / "assets" / f.name)
     faces = []
     for fam, path in SYSTEM_FONTS:
-        if Path(path).exists():
+        if path and Path(path).exists():
             shutil.copy(path, project / "assets" / Path(path).name)
             faces.append(f'@font-face {{ font-family: "{fam}"; src: url("assets/{Path(path).name}"); }}')
     band = sh.get("band") or {"text": sh["title"][:16], "hot": ""}

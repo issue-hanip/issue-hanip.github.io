@@ -69,7 +69,7 @@ def openverse(query: str, limit: int = 20) -> list[dict]:
     return out
 
 
-def topic_candidates(query: str, n: int = 3) -> list[dict]:
+def topic_candidates(query: str, n: int = 5) -> list[dict]:
     c = commons_topic(query)[:n]
     if len(c) < n:
         c += openverse(query)[: n - len(c)]
