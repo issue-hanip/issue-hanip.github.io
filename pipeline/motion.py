@@ -20,6 +20,9 @@ HF_VERSION = "0.9.72"
 ASSETS = Path(__file__).parent / "motion_assets"
 W, H, MY0, MH = 1080, 1920, 470, 1000
 LABEL = {"트렌드": "트렌드", "꿀팁": "꿀팁"}
+# 렌더 서버(우분투)에 설치된 무료 글꼴을 프로젝트에 넣어 @font-face로 선언한다 (렌더러가 글꼴을 확실히 쓰게)
+SYSTEM_FONTS = [("NanumGothic", "/usr/share/fonts/truetype/nanum/NanumGothicExtraBold.ttf"),
+                ("NotoEmoji", "/usr/share/fonts/truetype/noto/NotoColorEmoji.ttf")]
 
 
 def _e(s) -> str:
@@ -73,6 +76,11 @@ def build(project: Path, story: dict, sh: dict, scenes: list[dict], parts: list[
     (project / "assets").mkdir(parents=True)
     for f in ASSETS.iterdir():
         shutil.copy(f, project / "assets" / f.name)
+    faces = []
+    for fam, path in SYSTEM_FONTS:
+        if Path(path).exists():
+            shutil.copy(path, project / "assets" / Path(path).name)
+            faces.append(f'@font-face {{ font-family: "{fam}"; src: url("assets/{Path(path).name}"); }}')
     band = sh.get("band") or {"text": sh["title"][:16], "hot": ""}
     hot = band.get("hot", "")
     th = theme
@@ -170,14 +178,15 @@ def build(project: Path, story: dict, sh: dict, scenes: list[dict], parts: list[
 
     css = f"""
 @font-face {{ font-family: "BHS"; src: url("assets/BlackHanSans-Regular.ttf"); }}
+{chr(10).join(faces)}
 * {{ box-sizing: border-box; margin: 0; padding: 0 }}
 body {{ background: #000; }}
 #root {{ position: relative; width: {W}px; height: {H}px; overflow: hidden; background: {bg};
-  font-family: "Noto Sans KR", sans-serif; color: {th['text']} }}
+  font-family: "NanumGothic", sans-serif; color: {th['text']} }}
 .clip {{ position: absolute }}
 #top {{ position: absolute; left: 0; top: 0; width: {W}px; height: {MY0}px; background: #000; z-index: 5;
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; padding: 40px 50px 30px }}
-#top .lab {{ font-size: 36px; color: {th['muted']}; letter-spacing: 2px }}
+#top .lab {{ font-size: 42px; color: {th['accent']}; letter-spacing: 2px; font-weight: 800 }}
 #bandt {{ font-family: "BHS"; font-size: 112px; line-height: 1.12; text-align: center; color: #fff; word-break: keep-all }}
 #bandt em {{ font-style: normal; color: {th['hot']}; display: inline-block }}
 .scene {{ left: 0; top: {MY0}px; width: {W}px; height: {MH}px; overflow: hidden; z-index: 1;
@@ -195,7 +204,7 @@ body {{ background: #000; }}
 .ring {{ position: absolute; left: 240px; top: 110px; width: 600px; height: 600px; border-radius: 50%;
   border: 10px solid {th['accent']} }}
 .emo {{ position: absolute; filter: drop-shadow(0 30px 40px rgba(0,0,0,.45)) }}
-.emo.txt {{ font-family: "Noto Color Emoji", sans-serif; text-align: center }}
+.emo.txt {{ font-family: "NotoEmoji", sans-serif; text-align: center }}
 .emo.hero {{ left: 260px; top: 110px; width: 560px; height: 560px; font-size: 460px; line-height: 560px }}
 .emo.side {{ right: 60px; top: 60px; width: 240px; height: 240px; font-size: 200px; line-height: 240px; transform: rotate(12deg) }}
 .emo.top {{ left: 50px; top: 40px; width: 200px; height: 200px; font-size: 170px; line-height: 200px; transform: rotate(-10deg) }}

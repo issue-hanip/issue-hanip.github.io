@@ -299,7 +299,10 @@ class ClaudeWriter:
                 "(b) 일반인의 얼굴이 알아볼 수 있을 만큼 크게 나오지 않는다 (뒷모습·작은 군중은 괜찮음)\n"
                 "(c) 선정적·폭력적·사고 장면이 아니고, 흐리거나 깨지지 않았다\n"
                 "(d) 특정 사건 현장으로 오해될 장면(사고·시위·범죄 현장)이나, 이슈와 다른 특정 회사·상표가 크게 보이지 않는다\n"
-                "(e) 워터마크·큰 글자가 화면을 가리지 않는다\n\n" + listing)
+                "(e) 워터마크·큰 글자가 화면을 가리지 않는다\n"
+                "(f) 한국 이슈에 쓰이므로, 다른 나라임이 드러나는 장면(외국 국기·외국어 간판·외국 건물 양식이 주인공)은 제외. "
+                "사물 클로즈업(서류·의사봉·표·돈·음식)처럼 나라가 드러나지 않는 사진은 괜찮다\n"
+                "(g) 보여 줄 것과 관계없는 장면(예: '법원'인데 일반 주택)은 제외\n\n" + listing)
         schema = {"type": "object", "properties": {"ok": {"type": "array", "items": {"type": "integer"}},
                                                    "notes": {"type": "string"}},
                   "required": ["ok", "notes"], "additionalProperties": False}
@@ -341,7 +344,10 @@ kind:
 - big·sub·items는 대본·글에 있는 사실만 쓴다. 새 숫자·새 사실을 만들지 않는다.
 - 장면마다 다른 kind를 섞는다. photo는 2~3장면, number·list는 대본에 숫자·항목이 있을 때만.
 - emoji 칸은 모든 장면에 채운다 (사진을 못 구했을 때 대신 보여 줌). 쓰지 않는 칸은 빈 문자열·빈 배열.
-- 범죄·사고·법원 이슈에서 자극적인 자료 사진(피·흉기·사고 현장)은 고르지 않는다. 법원 이슈는 "courthouse building", "gavel" 정도.
+- 범죄·사고·법원 이슈에서 자극적인 자료 사진(피·흉기·사고 현장)은 고르지 않는다.
+- 건물·거리 풍경은 외국 사진이 나오기 쉬우므로, 나라가 드러나지 않는 사물 클로즈업을 우선한다
+  (법원 → "judge gavel", 돈 → "korean won banknotes", 시험 → "exam answer sheet pencil", 항공 → "airplane wing sky").
+  한국 장소가 꼭 필요하면 "Seoul"·"Korea"를 넣는다 (예: "Seoul subway platform").
 """
 
 
