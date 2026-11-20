@@ -247,7 +247,7 @@ def render(project: Path, out: Path, timeout: int = 1500) -> None:
     npx = shutil.which("npx") or "npx"
     lint = subprocess.run([npx, "--yes", f"hyperframes@{HF_VERSION}", "lint", str(project)],
                           capture_output=True, text=True, timeout=300)
-    print("  hyperframes lint:", (lint.stdout + lint.stderr)[-1500:])
+    print("  hyperframes lint:", (lint.stdout + lint.stderr)[:6000])
     proc = subprocess.run([npx, "--yes", f"hyperframes@{HF_VERSION}", "render", str(project), "--output", str(out),
                            "--fps", "30", "--quality", "standard"], capture_output=True, text=True, timeout=timeout)
     if proc.returncode != 0 or not out.exists():
