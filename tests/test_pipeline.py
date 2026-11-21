@@ -120,5 +120,21 @@ class T(unittest.TestCase):
             self.assertEqual(site.build(self.conn, self.cfg, out), 0)
 
 
+    def test_shorts_motion_falls_back_to_cards(self):
+        """새 방식이 실패해도 기존 카드 방식으로 영상이 만들어진다."""
+        from unittest import mock
+        from pipeline import shorts
+        news.store(self.conn, news.parse(RSS.encode(), "entertainment"))
+        self.conn.execute("UPDATE candidates SET published_at = ?", (db.now_iso(),))
+        stories.run(self.conn, self.cfg, write.FakeWriter(), {})
+        story = shorts.plan(self.conn, self.cfg)[0]
+        self.cfg["shorts"].update(renderer="motion", tts_provider="silent", media=False)
+        with tempfile.TemporaryDirectory() as d,                 mock.patch.object(shorts, "_motion", side_effect=RuntimeError("no node")):
+            ok, probs = shorts.produce(self.conn, self.cfg, story, Path(d), writer=write.FakeWriter())
+            self.assertTrue(ok, probs)
+            self.assertTrue((Path(d) / f"{story['slug']}.mp4").exists())
+        v = json.loads(self.conn.execute("SELECT variant FROM videos").fetchone()[0])
+        self.assertEqual(v["layout"], "frame")
+
 if __name__ == "__main__":
     unittest.main()

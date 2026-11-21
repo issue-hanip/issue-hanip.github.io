@@ -43,6 +43,7 @@ banned_phrases = ["범죄자", "사기꾼", "쓰레기", "정신병", "미친", 
 [shorts]
 enabled = true
 max_per_run = 3
+renderer = "motion"   # motion: HyperFrames 장면별 그림·단어 자막 (실패 시 cards 기존 방식)
 tts_provider = "auto"
 voice = "ko-KR-SunHiNeural"
 max_seconds = 58

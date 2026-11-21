@@ -77,15 +77,19 @@ def do_shorts(conn, cfg, summary, tts_override=None, fake=False):
         conn.commit()
     made, failed, uploaded = [], [], []
     vet = None          # 사진 후보를 Claude가 직접 보고 거른다 (안 되면 사진 없이 만든다)
+    writer = None       # 새 숏츠 방식: 장면별 그림 계획·자료 사진 검수
+    try:
+        writer = _writer(cfg, fake)
+    except Exception as e:
+        log(f"  Claude 연결 불가 → 기존 방식·사진 없이: {e}")
     if not fake and cfg["shorts"].get("media", True):
-        try:
-            vet = _writer(cfg, False).vet_photos
-        except Exception as e:
-            log(f"  사진 검수 불가 → 사진 없이: {e}")
+        if writer is not None:
+            vet = writer.vet_photos
+        else:
             cfg["shorts"]["media"] = False
     for s in shorts.plan(conn, cfg):
         try:
-            ok, problems = shorts.produce(conn, cfg, s, vet=vet)
+            ok, problems = shorts.produce(conn, cfg, s, vet=vet, writer=writer)
         except Exception as e:
             ok, problems = False, [f"{type(e).__name__}: {e}"[:300]]
         (made if ok else failed).append(s["slug"] if ok else {"slug": s["slug"], "problems": problems[:3]})

@@ -38,9 +38,9 @@ jobs:
           python-version: "3.12"
           cache: pip
 
-      - name: Korean font for video
+      - name: Fonts (Korean, color emoji) + ffmpeg for video
         run: |
-          sudo apt-get update -qq && sudo apt-get install -y -qq fonts-nanum
+          sudo apt-get update -qq && sudo apt-get install -y -qq fonts-nanum fonts-noto-color-emoji ffmpeg
           rm -rf ~/.cache/matplotlib
 
       - run: pip install -r requirements.txt
@@ -64,6 +64,8 @@ jobs:
           YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
           MAX_STORIES: ${{ inputs.max_stories }}
           MAX_SHORTS: ${{ inputs.max_shorts }}
+          HYPERFRAMES_TELEMETRY_DISABLED: "1"
+          DO_NOT_TRACK: "1"
         run: |
           set +e
           python -m pipeline.run all
