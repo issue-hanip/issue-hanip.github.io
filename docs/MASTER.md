@@ -80,9 +80,11 @@
 - 선정: 좋은 후보가 있으면 하루 발행분에 연예 외 국내 이슈 1편, 트렌드·꿀팁 1편을 섞는다. 단일 업체 보도자료는 피한다.
 - 트렌드·꿀팁은 정리형(핵심 3가지·기준일 명시), 가격·기간·조건은 기사와 같아야 하고 구매 권유 금지(검수 항목 9).
 
-## 새 숏츠 방식 시범 (11-21, 정기 실행에는 아직 미적용)
+## 새 숏츠 방식 (11-21 정기 실행 적용)
 - `pipeline/motion.py`: HyperFrames(무료, Apache 2.0)로 HTML+GSAP 장면을 크롬에서 녹화해 mp4. 음성과 단어 단위로 맞춘 자막(edge-tts 단어 시각), 장면 전환 번쩍임, 제목 띠 강조어 튀기기, 진행 막대.
 - `pipeline/visuals.py`: 장면별 그림 — 인물 사진(기존 Commons) / 자료 사진(Commons 주제 검색 → Openverse, CC0·PD·BY·BY-SA, 화면에 "자료 사진"·출처) / Fluent 3D 이모지(MIT) / 큰 숫자 카운트업 / 체크리스트.
 - Claude가 장면 계획(`plan_visuals`, 대본에 있는 사실만)과 자료 사진 검수(`vet_topic_photos`: 일반인 얼굴·외국 장면·무관한 장면 제외)를 한다. 사진이 없으면 3D 이모지로 대신한다.
 - 시범: `motion-pilot` 워크플로(수동, 업로드 없음). 렌더 시간 약 2~3분/편(59초 영상).
 - 렌더 서버 준비: ffmpeg, fonts-nanum, fonts-noto-color-emoji, Node 22.
+- 정기 실행: `config.toml [shorts] renderer = "motion"`. 새 방식이 실패하면 같은 음성으로 기존 카드 방식(`cards`)으로 다시 만든다. 길이 상한 60초(11-21, 58→60).
+- 영상 설명의 사진 출처는 새 방식에서 `visuals.credits()`(자료 사진은 실제 사건 사진이 아님을 명시).
