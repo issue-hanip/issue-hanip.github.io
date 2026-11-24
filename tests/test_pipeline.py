@@ -136,5 +136,36 @@ class T(unittest.TestCase):
         v = json.loads(self.conn.execute("SELECT variant FROM videos").fetchone()[0])
         self.assertEqual(v["layout"], "frame")
 
+    def test_learning_loop(self):
+        """성과 → 상대 점수 → 테마 가중치(0.5~2.0, 표본 3개 미만은 1.0) → 지침."""
+        from unittest import mock
+        from pipeline import learn, metrics
+        metrics.ensure(self.conn)
+        old = "2026-01-01T00:00:00+00:00"
+        cats = ["연예"] * 4 + ["꿀팁"] * 4
+        for i, cat in enumerate(cats):
+            slug = f"s{i}"
+            theme = "neon" if i < 4 else "mint"
+            self.conn.execute("INSERT INTO videos (slug, title, description, tags, seconds, status, youtube_id, variant, created_at, updated_at) "
+                              "VALUES (?, ?, '', '[]', 50, 'uploaded', ?, ?, ?, ?)",
+                              (slug, f"제목{i}", f"yt{i}", json.dumps({"theme": theme, "layout": "motion", "photos": i % 2}), old, old))
+            metrics.save(self.conn, slug, "youtube", views=1000 if i >= 4 else 100, retention=80)
+        # 분야·화면 구성은 _features 를 흉내 낸다 (stories 표는 컬럼이 많아 직접 넣지 않음)
+        feats = {f"s{i}": {"title": f"제목{i}", "category": c, "theme": "neon" if i < 4 else "mint",
+                           "layout": "motion", "visual": "photo" if i % 2 else "nophoto"} for i, c in enumerate(cats)}
+        with tempfile.TemporaryDirectory() as d, mock.patch.object(learn, "PLAYBOOK", Path(d) / "pb.json"), \
+                mock.patch.object(learn, "_features", return_value=feats):
+            res = learn.update(self.conn, writer=None)
+            self.assertEqual(res["scored"], 8)
+            w = res["theme_weights"]
+            self.assertGreater(w["mint"], 1.0)
+            self.assertLess(w["neon"], 1.0)
+            self.assertTrue(all(learn.W_MIN <= x <= learn.W_MAX for x in w.values()))
+            self.assertEqual(w["paper"], 1.0)          # 표본 없음 → 계속 시험
+            g = learn.guidance(learn.load(), "pick")
+            self.assertIn("꿀팁", g)
+            self.assertIn("항상 우선", g)
+            self.assertEqual(learn.guidance(learn.load(), "write"), "")   # 교훈이 아직 없음
+
 if __name__ == "__main__":
     unittest.main()

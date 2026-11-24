@@ -13,6 +13,10 @@ on:
         description: "이번 실행의 최대 숏츠 수 (비우면 설정값)"
         required: false
         default: ""
+      command:
+        description: "실행할 단계 (all | learn | shorts | build)"
+        required: false
+        default: "all"
 
 permissions:
   contents: write
@@ -68,7 +72,7 @@ jobs:
           DO_NOT_TRACK: "1"
         run: |
           set +e
-          python -m pipeline.run all
+          python -m pipeline.run "${{ inputs.command || 'all' }}"
           echo "status=$?" >> "$GITHUB_OUTPUT"
           echo '### 실행 결과' >> "$GITHUB_STEP_SUMMARY"
           echo '```json' >> "$GITHUB_STEP_SUMMARY"
@@ -80,6 +84,7 @@ jobs:
           git config user.name "pipeline-bot"
           git config user.email "pipeline-bot@users.noreply.github.com"
           git add data/pipeline.db data/last_run.json
+          [ -f data/playbook.json ] && git add data/playbook.json
           git diff --cached --quiet || git commit -m "data: daily update $(date -u +%F)"
           # 실행 중 다른 커밋이 올라왔어도 데이터가 사라지지 않도록 재시도
           for i in 1 2 3; do

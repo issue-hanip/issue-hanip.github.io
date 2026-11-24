@@ -20,7 +20,9 @@ def _cand(row) -> dict:
             "related": json.loads(row["related"])[:5]}
 
 
-def run(conn, cfg, writer, summary: dict, guidance: str = "") -> None:
+def run(conn, cfg, writer, summary: dict, guidance: str = "", write_guidance: str | None = None) -> None:
+    """guidance: 선정 지침, write_guidance: 작성 지침 (없으면 guidance를 같이 쓴다)."""
+    write_guidance = guidance if write_guidance is None else write_guidance
     g = cfg["generate"]
     rows = news.recent(conn, cfg)
     cands = [_cand(r) for r in rows]
@@ -44,7 +46,7 @@ def run(conn, cfg, writer, summary: dict, guidance: str = "") -> None:
         conn.commit()
         story, problems, feedback, review = None, [], None, {}
         for _ in range(g["max_attempts"]):
-            story = writer.write(cand, pk["angle"], pk["category"], feedback, guidance)
+            story = writer.write(cand, pk["angle"], pk["category"], feedback, write_guidance)
             problems = qa.check(story, cfg)
             if not problems:
                 review = writer.review(story)

@@ -58,7 +58,9 @@ def do_generate(conn, cfg, summary, fake=False):
         log("킬 스위치 → 생성 중단")
         return
     writer = _writer(cfg, fake)
-    stories.run(conn, cfg, writer, summary)
+    from . import learn
+    pb = learn.load()     # 성과 학습: 분야별 성과·교훈을 선정·작성 지침으로
+    stories.run(conn, cfg, writer, summary, learn.guidance(pb, "pick"), learn.guidance(pb, "write"))
     summary["usage"] = writer.usage
     log(f"발행 {len(summary.get('published', []))}편, 반려 {len(summary.get('rejected', []))}편")
 
@@ -87,9 +89,11 @@ def do_shorts(conn, cfg, summary, tts_override=None, fake=False):
             vet = writer.vet_photos
         else:
             cfg["shorts"]["media"] = False
+    from . import learn
+    theme_w = learn.theme_weights(learn.load()) or None   # 성과가 좋은 테마를 더 자주
     for s in shorts.plan(conn, cfg):
         try:
-            ok, problems = shorts.produce(conn, cfg, s, vet=vet, writer=writer)
+            ok, problems = shorts.produce(conn, cfg, s, vet=vet, writer=writer, weights=theme_w)
         except Exception as e:
             ok, problems = False, [f"{type(e).__name__}: {e}"[:300]]
         (made if ok else failed).append(s["slug"] if ok else {"slug": s["slug"], "problems": problems[:3]})
@@ -115,6 +119,24 @@ def do_shorts(conn, cfg, summary, tts_override=None, fake=False):
     summary["shorts"] = {"made": made, "failed": failed, "uploaded": uploaded}
     if failed and not made:
         raise RuntimeError(f"숏폼 {len(failed)}건 모두 실패")
+
+
+def do_learn(conn, cfg, summary, fake=False):
+    """지난 숏츠 성과 수집 → 가중치·교훈 갱신 (새 글·영상을 만들기 전에)."""
+    if fake:              # 시험 실행은 실제 playbook.json 을 건드리지 않는다
+        return
+    from . import learn, metrics
+    got = metrics.collect_youtube(conn)
+    writer = None
+    try:
+        writer = _writer(cfg, False)
+    except Exception as e:  # noqa: BLE001
+        log(f"  교훈 갱신용 Claude 연결 불가: {e}")
+    res = learn.update(conn, writer)
+    summary["learn"] = {"collected": got, **{k: v for k, v in res.items() if k != "stats"},
+                        "category": res.get("stats", {}).get("category", {})}
+    log(f"성과 수집 {got.get('videos', 0)}편 ({got.get('source', '-')}), 채점 {res['scored']}편"
+        + (", 교훈 갱신" if res.get("lessons_updated") else ""))
 
 
 def do_instagram(conn, cfg, summary):
@@ -166,7 +188,7 @@ def withdraw(conn, slug: str) -> bool:
 
 def main(argv=None):
     ap = argparse.ArgumentParser()
-    ap.add_argument("command", choices=["collect", "generate", "shorts", "build", "all", "instagram", "withdraw"])
+    ap.add_argument("command", choices=["collect", "learn", "generate", "shorts", "build", "all", "instagram", "withdraw"])
     ap.add_argument("slug", nargs="?")
     ap.add_argument("--fake-writer", action="store_true", help="Claude 대신 가짜 작성기 + 가짜 뉴스 (별도 DB)")
     ap.add_argument("--tts", choices=["auto", "edge", "gtts", "silent"])
@@ -200,6 +222,8 @@ def main(argv=None):
 
     if args.command in ("collect", "all"):
         stage("collect", lambda: do_collect(conn, cfg, summary, fake=args.fake_writer))
+    if args.command in ("learn", "all"):
+        stage("learn", lambda: do_learn(conn, cfg, summary, fake=args.fake_writer))
     if args.command in ("generate", "all"):
         stage("generate", lambda: do_generate(conn, cfg, summary, fake=args.fake_writer))
     if args.command in ("shorts", "all"):
