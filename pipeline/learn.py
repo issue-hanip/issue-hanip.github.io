@@ -34,7 +34,9 @@ LESSON_SYSTEM = (
     "바로 적용할 수 있는 구체적인 교훈을 최대 5개 쓰세요.\n"
     "- 표본이 적어 확실하지 않은 것은 쓰지 마세요. 개별 연예인 이름이 아니라 유형(예: 수치가 분명한 소식, 생활 정보)으로 쓰세요.\n"
     "- 보도되지 않은 내용 추가, 과장·낚시 제목, 사생활·외모 소재, 의혹을 사실처럼 쓰는 것은 교훈이 될 수 없습니다.\n"
-    "- 숫자를 직접 쓰지 말고 원칙만 쓰세요.")
+    "- 숫자를 직접 쓰지 말고 원칙만 쓰세요.\n"
+    "- 화면 구성(motion/frame)·테마는 실험 가중치로 따로 조정하므로 교훈으로 쓰지 마세요. 게시일이 달라 조회수가 "
+    "덜 쌓인 영상이 있을 수 있으니, 날짜 차이로 설명되는 차이는 교훈으로 삼지 마세요.")
 
 
 def load() -> dict:
@@ -123,9 +125,11 @@ def update(conn, writer=None) -> dict:
                 groups[d].setdefault(f[d], []).append(sc)
     from .cards import THEMES
     pb["weights"]["theme"] = {t: _shrunk(groups["theme"].get(t, [])) for t in THEMES}
+    pb["weights"]["layout"] = {k: _shrunk(groups["layout"].get(k, [])) for k in ("motion", "frame")}
     pb["stats"] = {d: {k: {"n": len(xs), "median": round(statistics.median(xs), 2)} for k, xs in g.items()}
                    for d, g in groups.items()}
-    summary = {"scored": len(scores), "theme_weights": pb["weights"]["theme"], "stats": pb["stats"]}
+    summary = {"scored": len(scores), "theme_weights": pb["weights"]["theme"],
+               "layout_weights": pb["weights"]["layout"], "stats": pb["stats"]}
 
     week_ago = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
     due = not pb["lessons_at"] or pb["lessons_at"] < week_ago
@@ -138,7 +142,8 @@ def update(conn, writer=None) -> dict:
                 return None
             ret = conn.execute("""SELECT retention FROM metrics WHERE slug = ? AND platform='youtube'
                                   AND retention IS NOT NULL ORDER BY day DESC LIMIT 1""", (slug,)).fetchone()
-            return (f"- 점수 {sc} | {f['category']} | {f['title']} | 화면 {f['layout']}·{f['visual']}"
+            made = conn.execute("SELECT substr(created_at, 1, 10) FROM videos WHERE slug = ?", (slug,)).fetchone()
+            return (f"- 점수 {sc} | 게시 {made[0] if made else '?'} | {f['category']} | {f['title']} | 화면 {f['layout']}·{f['visual']}"
                     + (f" | 시청 비율 {ret[0]:.0f}%" if ret else ""))
         k = min(6, len(ranked) // 2)
         table = "\n".join(filter(None, [line(s, sc) for s, sc in ranked[:k]] + ["…"]
@@ -151,7 +156,8 @@ def update(conn, writer=None) -> dict:
         except Exception as e:  # noqa: BLE001
             summary["lessons_error"] = f"{type(e).__name__}: {str(e)[:200]}"
     pb["history"] = (pb["history"] + [{"at": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
-                                       "scored": len(scores), "theme": dict(pb["weights"]["theme"])}])[-30:]
+                                       "scored": len(scores), "theme": dict(pb["weights"]["theme"]),
+                                       "layout": dict(pb["weights"]["layout"])}])[-30:]
     pb["updated_at"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
     save(pb)
     summary["lessons"] = pb["lessons"]

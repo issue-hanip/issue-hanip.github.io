@@ -40,6 +40,14 @@ def pick_theme(slug: str, weights: dict | None = None) -> str:
     return THEME_NAMES[-1]
 
 
+def pick_layout(slug: str, weights: dict | None = None) -> str:
+    """renderer="ab": slug로 정해지는 실험 배정 (motion=새 방식, frame=기존 카드). 성과 가중치 반영."""
+    w = weights or {}
+    wm, wf = float(w.get("motion", 1.0)), float(w.get("frame", 1.0))
+    h = int(hashlib.sha1(("layout:" + slug).encode()).hexdigest(), 16) % 10_000 / 10_000
+    return "motion" if h < wm / (wm + wf) else "frame"
+
+
 def assign_media(found: list) -> list:
     """장면 5개에 사진·영상 배정: 표지(hook)는 사진, 영상이 있으면 두 번째 장면(what)."""
     photos = [m for m in found if m.kind == "photo"]
@@ -53,7 +61,7 @@ def assign_media(found: list) -> list:
 
 
 def produce(conn, cfg, story, out_dir: Path = VIDEO_DIR, weights: dict | None = None,
-            vet=None, writer=None) -> tuple[bool, list[str]]:
+            vet=None, writer=None, layout_weights: dict | None = None) -> tuple[bool, list[str]]:
     sh = json.loads(story["shorts"])
     s, site = cfg["shorts"], cfg["site"]
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -62,7 +70,10 @@ def produce(conn, cfg, story, out_dir: Path = VIDEO_DIR, weights: dict | None = 
     try:
         theme_name = pick_theme(story["slug"], weights)
         th = cards.THEMES[theme_name]
-        use_motion = s.get("renderer", "cards") == "motion" and writer is not None
+        mode = s.get("renderer", "cards")
+        if mode == "ab":
+            mode = "motion" if pick_layout(story["slug"], layout_weights) == "motion" else "cards"
+        use_motion = mode == "motion" and writer is not None
         parts, total = [], 0.0
         for i, k in enumerate(SCENES):
             sc = sh["scenes"][k]

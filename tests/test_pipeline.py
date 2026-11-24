@@ -167,5 +167,14 @@ class T(unittest.TestCase):
             self.assertIn("항상 우선", g)
             self.assertEqual(learn.guidance(learn.load(), "write"), "")   # 교훈이 아직 없음
 
+    def test_pick_layout_follows_weights(self):
+        from pipeline import shorts
+        slugs = [f"20261125-{i:04x}" for i in range(400)]
+        even = sum(shorts.pick_layout(x) == "motion" for x in slugs) / 400
+        skew = sum(shorts.pick_layout(x, {"motion": 0.5, "frame": 1.5}) == "motion" for x in slugs) / 400
+        self.assertTrue(0.4 < even < 0.6, even)
+        self.assertTrue(0.15 < skew < 0.35, skew)
+        self.assertEqual(shorts.pick_layout(slugs[0]), shorts.pick_layout(slugs[0]))
+
 if __name__ == "__main__":
     unittest.main()

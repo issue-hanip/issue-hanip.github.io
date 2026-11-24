@@ -90,10 +90,12 @@ def do_shorts(conn, cfg, summary, tts_override=None, fake=False):
         else:
             cfg["shorts"]["media"] = False
     from . import learn
-    theme_w = learn.theme_weights(learn.load()) or None   # 성과가 좋은 테마를 더 자주
+    pb = learn.load()
+    theme_w = learn.theme_weights(pb) or None             # 성과가 좋은 테마를 더 자주
+    layout_w = pb.get("weights", {}).get("layout") or None  # 새 방식/기존 방식 배정 비율
     for s in shorts.plan(conn, cfg):
         try:
-            ok, problems = shorts.produce(conn, cfg, s, vet=vet, writer=writer, weights=theme_w)
+            ok, problems = shorts.produce(conn, cfg, s, vet=vet, writer=writer, weights=theme_w, layout_weights=layout_w)
         except Exception as e:
             ok, problems = False, [f"{type(e).__name__}: {e}"[:300]]
         (made if ok else failed).append(s["slug"] if ok else {"slug": s["slug"], "problems": problems[:3]})
