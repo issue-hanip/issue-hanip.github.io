@@ -100,12 +100,14 @@ jobs:
           path: videos/
           retention-days: 30
 
-      - uses: actions/upload-pages-artifact@v3
+      - if: (inputs.command || 'all') == 'all' || inputs.command == 'build'
+        uses: actions/upload-pages-artifact@v3
         with:
           path: public
 
   deploy:
     needs: run
+    if: (inputs.command || 'all') == 'all' || inputs.command == 'build'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
@@ -117,6 +119,7 @@ jobs:
   instagram:
     # Pages 배포 후 실행: 방금 올라간 public/media/*.mp4 URL로 릴스 게시
     needs: deploy
+    if: (inputs.command || 'all') == 'all'
     runs-on: ubuntu-latest
     outputs:
       status: ${{ steps.ig.outputs.status }}
