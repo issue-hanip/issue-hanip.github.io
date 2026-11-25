@@ -138,7 +138,7 @@ WRITE_SYSTEM = """당신은 한국 이슈·연예 소식 채널의 작가입니�
 - title: 50자 이내 궁금증 제목. hashtags: 4~6개(# 없이), 인물·사건 키워드 중심.
 - band: 영상 내내 화면 위쪽에 고정되는 큰 제목. text는 16자 이내(예: "블랙핑크 YG 결별설 정리"),
   hot은 text 안에 그대로 들어 있는 강조 단어 하나(빨간색으로 표시, 예: "결별설"). 본문 사실과 어긋나면 안 된다.
-- people: 영상에 사진을 보여줄 인물(최대 3명). 이 이슈의 당사자인 연예인·그룹·운동선수, 공식 활동 중인 공인만.
+- people: 영상에 사진을 보여줄 인물(최대 3명, 이야기의 주인공을 맨 앞에). 이 이슈의 당사자인 연예인·그룹·운동선수, 공식 활동 중인 공인만.
   범죄·사고의 혐의자나 피해자, 미성년자, 일반인, 사생활 보도(연애·이혼·건강)의 당사자는 넣지 않는다. 해당이 없으면 빈 배열.
   name_en은 위키미디어 공용(Wikimedia Commons) 파일 이름에 흔히 쓰는 영문 표기(예: "Cha Eun-woo", "BLACKPINK"),
   aliases에는 다른 영문 표기(예: "Cha Eunwoo")를 0~3개 적는다.
@@ -324,10 +324,11 @@ VISUAL_SCHEMA = {
         "properties": {
             "scene": {"type": "string", "enum": SCENES},
             "kind": {"type": "string", "enum": ["person", "photo", "emoji", "number", "list"]},
+            "who": {"type": "string"},
             "query_en": {"type": "string"}, "emoji": {"type": "string"},
             "big": {"type": "string"}, "sub": {"type": "string"},
             "items": {"type": "array", "maxItems": 3, "items": {"type": "string"}}},
-        "required": ["scene", "kind", "query_en", "emoji", "big", "sub", "items"], "additionalProperties": False}}},
+        "required": ["scene", "kind", "who", "query_en", "emoji", "big", "sub", "items"], "additionalProperties": False}}},
     "required": ["scenes"], "additionalProperties": False,
 }
 
@@ -335,6 +336,8 @@ VISUAL_SYSTEM = """당신은 숏폼 영상의 미술 감독입니다. 장면 5�
 보여 줄 그림을 정합니다. 목표: 글자만 나오는 장면 없이, 시청자가 내용을 한눈에 이해하게.
 kind:
 - person: 이 이슈 당사자(공인)의 사진. 인물 사진 사용 가능이 '예'일 때만, 최대 2장면.
+  who에 그 장면 대본(narration)이 이야기하는 인물의 name_ko를 shorts.people 그대로 쓴다. 그 장면 대본이 그 인물을
+  직접 말할 때만 person으로 한다 (예: 대본이 "김종국이…"인데 다른 출연자 사진을 넣으면 안 됨). 다른 kind는 who를 빈 문자열로.
 - photo: 이해를 돕는 자료 사진. query_en에 사진 검색어(영어 2~4단어, 구체적인 사물·장소, 예: "roller coaster amusement park",
   "airplane window seat", "courtroom gavel", "exam answer sheet pencil"). 특정 인물·특정 회사 이름을 넣지 않는다.
 - emoji: 3D 이모지 하나를 크게 움직여 보여 줌. 사물·감정을 상징 (예: 🎢 ✈️ ⚖️ 💸 📝 🎂 😭).
@@ -386,7 +389,7 @@ class FakeWriter:
 
     def plan_visuals(self, story, has_people):
         kinds = ["emoji", "number", "photo", "list", "emoji"]
-        return {"scenes": [{"scene": k, "kind": kinds[i], "query_en": "film camera" if kinds[i] == "photo" else "",
+        return {"scenes": [{"scene": k, "kind": kinds[i], "who": "", "query_en": "film camera" if kinds[i] == "photo" else "",
                             "emoji": "🎬", "big": "3일" if kinds[i] == "number" else "", "sub": "촬영 중단",
                             "items": ["부상", "촬영 계속"] if kinds[i] == "list" else []}
                            for i, k in enumerate(SCENES)]}

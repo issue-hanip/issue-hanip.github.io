@@ -176,5 +176,24 @@ class T(unittest.TestCase):
         self.assertTrue(0.15 < skew < 0.35, skew)
         self.assertEqual(shorts.pick_layout(slugs[0]), shorts.pick_layout(slugs[0]))
 
+    def test_person_photo_matches_scene(self):
+        """장면 대본의 인물(who) 사진만 넣는다. 그 인물 사진이 없으면 다른 출연자 사진 대신 이모지."""
+        from unittest import mock
+        from pipeline import media, visuals
+        people = [{"name_ko": "김종국", "name_en": "Kim Jong-kook", "aliases": []},
+                  {"name_ko": "안재현", "name_en": "Ahn Jae-hyun", "aliases": []}]
+        self.assertIs(visuals.match_person("Kim Jong-kook", people), people[0])
+        self.assertIsNone(visuals.match_person("", people))
+        self.assertIs(visuals.match_person("", people[:1]), people[0])
+        only_ahn = [media.Media("photo", Path("a.jpg"), "File:Ahn.png", "HB", "CC BY 3.0", "", "안재현")]
+        plan = {"scenes": [{"scene": "hook", "kind": "person", "who": "김종국", "emoji": ""},
+                           {"scene": "reaction", "kind": "person", "who": "안재현", "emoji": ""}]}
+        with tempfile.TemporaryDirectory() as d, mock.patch.object(media, "gather", return_value=only_ahn):
+            out = visuals.resolve(plan, people, Path(d))
+        self.assertEqual(out[0]["kind"], "emoji")
+        self.assertEqual(out[1]["kind"], "person")
+        self.assertEqual(out[1]["title"], "File:Ahn.png")
+
+
 if __name__ == "__main__":
     unittest.main()

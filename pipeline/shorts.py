@@ -154,7 +154,8 @@ def _cards(story, sh, parts, th, site, work, out, out_dir, vet, s, total) -> tup
     found = []
     if s.get("media", True) and sh.get("people"):
         try:
-            found = media.gather(sh["people"], work / "media", s.get("max_photos", 4),
+            # 기존 방식은 장면마다 인물을 가리지 않으므로 주인공(첫 인물) 사진만 쓴다
+            found = media.gather(sh["people"][:1], work / "media", s.get("max_photos", 4),
                                  s.get("max_clips", 1), vet=vet)
         except Exception as e:          # 사진을 못 구해도 글자 모션으로 만든다
             print(f"  사진 검색 실패: {e}")

@@ -119,6 +119,18 @@ def _fluent_folders() -> list[str]:
     return _FOLDERS
 
 
+def match_person(who: str, people: list[dict]) -> dict | None:
+    """장면의 who → people 항목. 비어 있으면 인물이 한 명일 때만 그 인물. 못 맞추면 None (사진 안 넣음)."""
+    who = (who or "").replace(" ", "").lower()
+    if not who:
+        return people[0] if len(people) == 1 else None
+    for pp in people:
+        names = [pp.get("name_ko", ""), pp.get("name_en", "")] + list(pp.get("aliases") or [])
+        if any(n and n.replace(" ", "").lower() == who for n in names):
+            return pp
+    return None
+
+
 def resolve(plan: dict, people: list[dict], work: Path, vet_people=None, vet_topic=None,
             max_people_photos: int = 2) -> list[dict]:
     """장면 계획 → 실제 자료. 장면마다 {kind, file, credit, label, emoji_file, big, sub, items}.
@@ -126,20 +138,27 @@ def resolve(plan: dict, people: list[dict], work: Path, vet_people=None, vet_top
     work.mkdir(parents=True, exist_ok=True)
     scenes = [dict(s) for s in plan["scenes"]]
     # 인물 사진
+    # 장면마다 그 장면 대본이 말하는 인물(who)의 사진만 넣는다. 다른 인물 사진으로 채우지 않는다.
     person_idx = [i for i, s in enumerate(scenes) if s["kind"] == "person"]
+    wants = {i: match_person(scenes[i].get("who", ""), people) for i in person_idx}
+    need = [pp for pp in people if any(w is pp for w in wants.values())]
     found = []
-    if person_idx and people:
+    if need:
         try:
-            found = [m for m in media.gather(people, work / "people", max_people_photos, 0, vet=vet_people)
+            found = [m for m in media.gather(need, work / "people", max_people_photos, 0, vet=vet_people)
                      if m.kind == "photo"]
         except Exception as e:
             print(f"  인물 사진 실패: {e}")
-    for j, i in enumerate(person_idx):
-        if j < len(found):
-            m = found[j]
-            scenes[i].update(file=m.path, credit=m.credit(), label="", title=m.title, page=m.page)
-        else:
+    used = set()
+    for i in person_idx:
+        pp = wants[i]
+        key = (pp or {}).get("name_ko") or (pp or {}).get("name_en", "")
+        m = next((m for j, m in enumerate(found) if pp is not None and m.person == key and j not in used), None)
+        if m is None:
             scenes[i]["kind"] = "emoji"
+            continue
+        used.add(found.index(m))
+        scenes[i].update(file=m.path, credit=m.credit(), label="", title=m.title, page=m.page)
     # 자료 사진: 장면마다 후보 3장 → 한 번에 검수 → 장면별 첫 통과분
     cands, owner = [], []
     for i, s in enumerate(scenes):
