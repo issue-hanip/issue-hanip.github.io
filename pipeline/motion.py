@@ -70,6 +70,15 @@ def _parse_number(big: str):
     return pre, val, suf, dec, "," in num
 
 
+def _big_size(big: str, base: int = 230, room: int = 760) -> int:
+    """큰 숫자 글자 크기. 한 줄(가로 room px, 오른쪽 위 이모지 자리 제외)에 들어가게 줄인다.
+    '184억5천만원'처럼 긴 값이 화면 밖으로 넘치거나 두 줄로 꺾이고 이모지와 겹치던 문제(11-27)."""
+    units = sum(0.62 if (ch.isdigit() or ch in ".,%") else 1.0 for ch in big.strip())
+    if units * base <= room:
+        return base
+    return max(110, int(room / units))
+
+
 def build(project: Path, story: dict, sh: dict, scenes: list[dict], parts: list[dict], theme: dict,
           site_title: str) -> float:
     """project 폴더에 index.html과 자료를 만든다. parts[i] = {audio, secs, words, headline, narration}."""
@@ -119,7 +128,8 @@ def build(project: Path, story: dict, sh: dict, scenes: list[dict], parts: list[
         elif kind == "number" and sc.get("big"):
             num = _parse_number(sc["big"])
             inner.append(f'<div class="orbs"><i></i><i></i><i></i></div>{emoji_tag.replace("emo", "emo side", 1)}')
-            inner.append(f'<div class="big" id="{sid}n">{_e(sc["big"])}</div><div class="sub" id="{sid}s">{_e(sc.get("sub"))}</div>')
+            inner.append(f'<div class="big" id="{sid}n" style="font-size:{_big_size(sc["big"])}px">{_e(sc["big"])}</div>'
+                         f'<div class="sub" id="{sid}s">{_e(sc.get("sub"))}</div>')
             js.append(f'tl.from("#{sid}n",{{scale:0.3,opacity:0,duration:0.5,ease:"back.out(2)"}},{offset + 0.15:.3f});')
             if num:
                 pre, val, suf, dec, comma = num
@@ -210,7 +220,7 @@ body {{ background: #000; }}
 .emo.hero {{ left: 260px; top: 110px; width: 560px; height: 560px; font-size: 460px; line-height: 560px }}
 .emo.side {{ right: 60px; top: 60px; width: 240px; height: 240px; font-size: 200px; line-height: 240px; transform: rotate(12deg) }}
 .emo.top {{ left: 50px; top: 40px; width: 200px; height: 200px; font-size: 170px; line-height: 200px; transform: rotate(-10deg) }}
-.big {{ position: absolute; left: 0; right: 0; top: 230px; text-align: center; font-family: "BHS"; font-size: 230px;
+.big {{ position: absolute; left: 0; right: 0; top: 230px; text-align: center; font-family: "BHS"; font-size: 230px; white-space: nowrap;
   color: {th['accent']}; text-shadow: 0 12px 0 rgba(0,0,0,.35) }}
 .sub {{ position: absolute; left: 0; right: 0; top: 520px; text-align: center; font-size: 64px; font-weight: 800 }}
 .list {{ position: absolute; left: 80px; right: 80px; top: 270px; list-style: none; display: grid; gap: 34px }}

@@ -82,7 +82,7 @@
 
 ## 새 숏츠 방식 (11-21 정기 실행 적용)
 - `pipeline/motion.py`: HyperFrames(무료, Apache 2.0)로 HTML+GSAP 장면을 크롬에서 녹화해 mp4. 음성과 단어 단위로 맞춘 자막(edge-tts 단어 시각), 장면 전환 번쩍임, 제목 띠 강조어 튀기기, 진행 막대.
-- `pipeline/visuals.py`: 장면별 그림 — 인물 사진(기존 Commons) / 자료 사진(Commons 주제 검색 → Openverse, CC0·PD·BY·BY-SA, 화면에 "자료 사진"·출처) / Fluent 3D 이모지(MIT) / 큰 숫자 카운트업 / 체크리스트.
+- `pipeline/visuals.py`: 장면별 그림 — 인물 사진(기존 Commons) / 자료 사진(Commons 주제 검색 → Openverse, CC0·PD·BY·BY-SA, 화면에 "자료 사진"·출처) / Fluent 3D 이모지(MIT) / 큰 숫자 카운트업(값 길이에 맞춰 글자 크기 자동 조절) / 체크리스트.
 - Claude가 장면 계획(`plan_visuals`, 대본에 있는 사실만)과 자료 사진 검수(`vet_topic_photos`: 일반인 얼굴·외국 장면·무관한 장면 제외)를 한다. 사진이 없으면 3D 이모지로 대신한다.
 - 시범: `motion-pilot` 워크플로(수동, 업로드 없음). 렌더 시간 약 2~3분/편(59초 영상).
 - 렌더 서버 준비: ffmpeg, fonts-nanum, fonts-noto-color-emoji, Node 22.
