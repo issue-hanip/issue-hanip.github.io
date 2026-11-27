@@ -90,7 +90,7 @@
 - 영상 설명의 사진 출처는 새 방식에서 `visuals.credits()`(자료 사진은 실제 사건 사진이 아님을 명시).
 
 ## 세 채널 공동 업로드 감시 (11-27 참여)
-- 한컷국어·실거래가 리포트·이슈 한입이 같은 Claude 계정·크롬을 함께 써서, 다른 채널 계정에 잘못 올리는 사고를 서로 잡기 위한 공동 감시판: https://claude.ai/artifact/2xRjyyuFaj2dxB2CR4Cbfe (채널 키 "issue").
+- 한컷국어·실거래가 리포트·이슈 한입이 같은 Claude 계정·크롬을 함께 써서, 다른 채널 계정에 잘못 올리는 사고를 서로 잡기 위한 공동 감시판(채널 키 "issue"). 주소·다른 채널 정보는 공개 저장소에 두지 않고 비공개 메모(04:00 예약 작업 지침·Claude 메모)에만 둔다(보드 규칙 7조).
 - 이슈 한입은 Chrome을 쓰지 않는다. YouTube는 Actions에서 API로 올리고, 업로드 직전 토큰의 채널 이름이 "이슈 한입"인지 확인한다(youtube.py expected_channel).
 - 새벽 실행 learn 단계 끝에 `run.channel_audit`: YouTube API로 채널 업로드 전체(비공개·예약 포함)를 DB 기록과 대조 → last_run.json `channel_audit` (unknown=기록에 없는 영상).
 - 04:00 매일 점검이 감시판에 checks/issue-YYYYMMDD 를 남기고, unknown 이 있으면 alerts 를 올린다. 영상을 지우거나 비공개로 바꾸는 일은 사용자 확인 뒤에만. 다른 채널 기록은 읽기만.
