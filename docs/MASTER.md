@@ -89,6 +89,13 @@
 - 정기 실행: `config.toml [shorts] renderer = "motion"`. 새 방식이 실패하면 같은 음성으로 기존 카드 방식(`cards`)으로 다시 만든다. 길이 상한 60초(11-21, 58→60).
 - 영상 설명의 사진 출처는 새 방식에서 `visuals.credits()`(자료 사진은 실제 사건 사진이 아님을 명시).
 
+## 세 채널 공동 업로드 감시 (11-27 참여)
+- 한컷국어·실거래가 리포트·이슈 한입이 같은 Claude 계정·크롬을 함께 써서, 다른 채널 계정에 잘못 올리는 사고를 서로 잡기 위한 공동 감시판: https://claude.ai/artifact/2xRjyyuFaj2dxB2CR4Cbfe (채널 키 "issue").
+- 이슈 한입은 Chrome을 쓰지 않는다. YouTube는 Actions에서 API로 올리고, 업로드 직전 토큰의 채널 이름이 "이슈 한입"인지 확인한다(youtube.py expected_channel).
+- 새벽 실행 learn 단계 끝에 `run.channel_audit`: YouTube API로 채널 업로드 전체(비공개·예약 포함)를 DB 기록과 대조 → last_run.json `channel_audit` (unknown=기록에 없는 영상).
+- 04:00 매일 점검이 감시판에 checks/issue-YYYYMMDD 를 남기고, unknown 이 있으면 alerts 를 올린다. 영상을 지우거나 비공개로 바꾸는 일은 사용자 확인 뒤에만. 다른 채널 기록은 읽기만.
+- 첫 대조(11-27): 채널 영상 32편 전부 공개·전부 우리 기록과 일치.
+
 ## 성과 학습 고리 (11-25 추가)
 - 매일 새벽 실행의 첫 단계 `learn`: `pipeline/metrics.py`가 YouTube 숏츠 성과를 날짜별로 쌓는다(Data API 조회·좋아요·댓글 + Analytics 평균 시청 비율·공유, 안 되면 공개 페이지 조회수).
 - `pipeline/learn.py`: 게시 2일 이상 지난 숏츠를 점수(조회수 × 시청 비율 가산)/채널 중앙값으로 상대 평가 → `data/playbook.json`.
