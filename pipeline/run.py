@@ -139,6 +139,32 @@ def do_learn(conn, cfg, summary, fake=False):
                         "category": res.get("stats", {}).get("category", {})}
     log(f"성과 수집 {got.get('videos', 0)}편 ({got.get('source', '-')}), 채점 {res['scored']}편"
         + (", 교훈 갱신" if res.get("lessons_updated") else ""))
+    summary["channel_audit"] = channel_audit(conn)
+    a = summary["channel_audit"]
+    log(f"채널 대조: 채널 영상 {a.get('total', '-')}편, 기록에 없는 영상 {len(a.get('unknown', []))}편"
+        + (f", 오류 {a['error']}" if a.get("error") else ""))
+
+
+def channel_audit(conn, listing: dict | None = None) -> dict:
+    """세 채널 공동 감시: 우리 YouTube 채널의 업로드 전체를 DB 기록과 대조한다.
+    기록에 없는 영상 = 다른 채널(한컷국어·실거래가) 영상이 잘못 올라왔을 수 있음 → 04:00 점검이 감시판에 경보."""
+    from . import youtube
+    from .db import now_iso
+    out = {"checked_at": now_iso()}
+    try:
+        if listing is None:
+            if not youtube.configured():
+                return {**out, "error": "YouTube 자격 증명 없음"}
+            listing = youtube.channel_uploads()
+        ours = {r[0] for r in conn.execute("SELECT youtube_id FROM videos WHERE youtube_id IS NOT NULL")}
+        vids = listing.get("videos", [])
+        out.update(channel=listing.get("channel", ""), total=len(vids),
+                   privacy={p: sum(v.get("privacy") == p for v in vids) for p in {v.get("privacy") for v in vids}},
+                   unknown=[v for v in vids if v.get("id") not in ours],
+                   missing=sorted(ours - {v.get("id") for v in vids}))
+    except Exception as e:  # noqa: BLE001
+        out["error"] = f"{type(e).__name__}: {str(e)[:200]}"
+    return out
 
 
 def do_instagram(conn, cfg, summary):

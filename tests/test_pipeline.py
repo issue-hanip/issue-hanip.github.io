@@ -195,5 +195,17 @@ class T(unittest.TestCase):
         self.assertEqual(out[1]["title"], "File:Ahn.png")
 
 
+    def test_channel_audit_flags_unknown_videos(self):
+        from pipeline import run
+        self.conn.execute("INSERT INTO videos (slug, title, description, tags, seconds, status, youtube_id, variant, created_at, updated_at) "
+                          "VALUES ('s1', 't', '', '[]', 50, 'uploaded', 'OURS', '{}', 'x', 'x')")
+        res = run.channel_audit(self.conn, {"channel": "이슈 한입", "videos": [
+            {"id": "OURS", "title": "우리 영상", "privacy": "public"},
+            {"id": "OTHER", "title": "맞춤법 퀴즈", "privacy": "private"}]})
+        self.assertEqual(res["total"], 2)
+        self.assertEqual([v["id"] for v in res["unknown"]], ["OTHER"])
+        self.assertEqual(res["missing"], [])
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -57,6 +57,34 @@ def channel_title(token: str | None = None) -> str:
     return items[0]["snippet"]["title"] if items else ""
 
 
+def channel_uploads(token: str | None = None) -> dict:
+    """토큰 채널의 업로드 전체(비공개·예약 포함): {"channel": 이름, "videos": [{id, title, published, privacy}]}."""
+    token = token or access_token()
+    h = {"Authorization": f"Bearer {token}"}
+    r = requests.get("https://www.googleapis.com/youtube/v3/channels", headers=h, timeout=30,
+                     params={"part": "snippet,contentDetails", "mine": "true"})
+    if r.status_code != 200:
+        raise YouTubeError(f"채널 확인 실패 {r.status_code}: {r.text[:200]}")
+    ch = (r.json().get("items") or [{}])[0]
+    pl = ch.get("contentDetails", {}).get("relatedPlaylists", {}).get("uploads")
+    out, page = [], None
+    while pl:
+        r = requests.get("https://www.googleapis.com/youtube/v3/playlistItems", headers=h, timeout=30,
+                         params={"part": "snippet,status", "playlistId": pl, "maxResults": 50,
+                                 **({"pageToken": page} if page else {})})
+        if r.status_code != 200:
+            raise YouTubeError(f"업로드 목록 실패 {r.status_code}: {r.text[:200]}")
+        j = r.json()
+        for it in j.get("items", []):
+            sn = it.get("snippet", {})
+            out.append({"id": sn.get("resourceId", {}).get("videoId"), "title": sn.get("title", ""),
+                        "published": sn.get("publishedAt", ""), "privacy": it.get("status", {}).get("privacyStatus")})
+        page = j.get("nextPageToken")
+        if not page:
+            break
+    return {"channel": ch.get("snippet", {}).get("title", ""), "videos": out}
+
+
 def upload(path, title: str, description: str, tags: list[str], privacy: str, category_id: str,
            expected_channel: str | None = None) -> str:
     token = access_token()
